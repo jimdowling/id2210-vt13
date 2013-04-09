@@ -15,10 +15,12 @@ cd id2210-vt13
 mvn clean install
 
 The search module specifies a kompics experiment in the main experiment.
-You can execute the main for the search program using:
+You can execute the main for the search program by using the assembly plugin on the
+search project to generate a jar file containing all code:
 
 cd search
-mvn exec:java -Dexec.mainClass="search.main.Main" -Dexec.args=""
+mvn assembly:assembly
+java -jar target/id2210-search-1.0-SNAPSHOT-jar-with-dependencies.jar
 
 
 The REST API for the search module contains 2 operations:

@@ -86,7 +86,7 @@ public final class Search extends ComponentDefinition {
 
             Snapshot.updateNum(self, num);
             try {
-                addEntry("The Art of Computer Science", "100");
+                addEntry(new StringBuilder(), "The Art of Computer Science", "100");
             } catch (IOException ex) {
                 java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
                 System.exit(-1);
@@ -156,7 +156,7 @@ public final class Search extends ComponentDefinition {
         sb.append("</head><body><h2 align=\"center\" class=\"style2\">");
         sb.append("ID2210 Uploaded Entry</h2><br>");
         try {
-            addEntry(title, id);
+            addEntry(sb, title, id);
         } catch (IOException ex) {
             sb.append(ex.getMessage());
             java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
@@ -165,7 +165,7 @@ public final class Search extends ComponentDefinition {
         return sb.toString();
     }
 
-    private void addEntry(String title, String id) throws IOException {
+    private void addEntry(StringBuilder sb, String title, String id) throws IOException {
         IndexWriter w = new IndexWriter(index, config);
         Document doc = new Document();
         doc.add(new TextField("title", title, Field.Store.YES));
@@ -175,6 +175,8 @@ public final class Search extends ComponentDefinition {
         doc.add(new StringField("id", id, Field.Store.YES));
         w.addDocument(doc);
         w.close();
+        
+        sb.append("Entry: (").append(title).append(", ").append(id).append(")");
     }
 
     private String query(StringBuilder sb, String querystr) throws ParseException, IOException {
@@ -198,12 +200,13 @@ public final class Search extends ComponentDefinition {
         ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
         // display results
-        sb.append("<tr>Found ").append(hits.length).append(" entries.</tr>");
+        sb.append("<table><tr>Found ").append(hits.length).append(" entries.</tr>");
         for (int i = 0; i < hits.length; ++i) {
             int docId = hits[i].doc;
             Document d = searcher.doc(docId);
             sb.append("<tr>").append(i + 1).append(". ").append(d.get("id")).append("\t").append(d.get("title")).append("</tr>");
         }
+        sb.append("</table>");
 
         // reader can only be closed when there
         // is no need to access the documents any more.

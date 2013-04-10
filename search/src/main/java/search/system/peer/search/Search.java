@@ -43,7 +43,7 @@ import tman.system.peer.tman.TManSample;
 import tman.system.peer.tman.TManSamplePort;
 
 /**
- * 
+ * Should have some comments here.
  * @author jdowling
  */
 public final class Search extends ComponentDefinition {

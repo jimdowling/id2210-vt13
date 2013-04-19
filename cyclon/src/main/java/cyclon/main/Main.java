@@ -3,7 +3,7 @@ package cyclon.main;
 import common.configuration.Configuration;
 import common.simulation.scenarios.Scenario;
 import common.simulation.scenarios.Scenario2;
-import cyclon.simulator.core.CyclonSimulationMain;
+import cyclon.simulator.core.CyclonExecutionMain;
 
 
 public class Main {
@@ -14,6 +14,6 @@ public class Main {
 		Scenario scenario = new Scenario2();
 		scenario.setSeed(System.currentTimeMillis());
 //		scenario.getScenario().simulate(CyclonSimulationMain.class);
-		scenario.getScenario().execute(CyclonSimulationMain.class);
+		scenario.getScenario().execute(CyclonExecutionMain.class);
 	}
 }

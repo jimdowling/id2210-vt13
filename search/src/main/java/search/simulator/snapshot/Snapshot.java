@@ -8,7 +8,7 @@ import common.peer.PeerAddress;
 public class Snapshot {
 	private static HashMap<PeerAddress, PeerInfo> peers = new HashMap<PeerAddress, PeerInfo>();
 	private static int counter = 0;
-	private static String FILENAME = "aggregation.out";
+	private static String FILENAME = "search.out";
 
 //-------------------------------------------------------------------
 	public static void init(int numOfStripes) {
@@ -47,15 +47,16 @@ public class Snapshot {
 
 //-------------------------------------------------------------------
 	public static void report() {
+            if (counter % 1000 == 0) {
 		String str = new String();
 		str += "current time: " + counter++ + "\n";
 		str += reportNetworkState();
-		str += verifyNetworkSize();
-		str += reportDetailes();
+		str += reportDetails();
 		str += "###\n";
 		
 		System.out.println(str);
 		FileIO.append(str, FILENAME);
+            }
 	}
 
 //-------------------------------------------------------------------
@@ -68,38 +69,12 @@ public class Snapshot {
 	}
 	
 //-------------------------------------------------------------------
-	private static String reportDetailes() {
+	private static String reportDetails() {
 		PeerInfo peerInfo;
 		String str = new String("---\n");
 
-		for (PeerAddress peer : peers.keySet()) {
-			peerInfo = peers.get(peer);
-		
-			str += "peer: " + peer;
-			str += ", cyclon parters: " + peerInfo.getCyclonPartners();
-			str += "\n";
-		}
-		
 		return str;
 	}
 
-//-------------------------------------------------------------------
-	private static String verifyNetworkSize() {
-		PeerInfo peerInfo;
-		int correct = 0;
-		double estimated = 0;
-		String str = new String("---\n");
-
-		for (PeerAddress peer : peers.keySet()) {
-			peerInfo = peers.get(peer);
-			estimated = 1 / peerInfo.getNum();
-			str += peer + " --> estimated size: " + estimated + "\n";
-			if (Math.abs(estimated - peers.size()) <= peers.size() * 0.02)
-				correct++;
-		}
-		
-		str += "estimated correctly: " + correct + "\n";
-		return str;
-	}
 
 }

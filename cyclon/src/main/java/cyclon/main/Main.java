@@ -13,7 +13,7 @@ public class Main {
 		
 		Scenario scenario = new Scenario2();
 		scenario.setSeed(System.currentTimeMillis());
-//		scenario.getScenario().simulate(CyclonSimulationMain.class);
-		scenario.getScenario().execute(CyclonSimulationMain.class);
+		scenario.getScenario().simulate(CyclonSimulationMain.class);
+//		scenario.getScenario().execute(CyclonSimulationMain.class);
 	}
 }

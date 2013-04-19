@@ -63,6 +63,8 @@ public final class Search extends ComponentDefinition {
     Directory index = new RAMDirectory();
     IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_42, analyzer);
 
+    private int latestMissingIndexValue =0;
+    
 //-------------------------------------------------------------------	
     public Search() {
 
@@ -130,7 +132,7 @@ public final class Search extends ComponentDefinition {
         sb.append("<style type=\"text/css\"><!--.style2 {font-family: ");
         sb.append("Arial, Helvetica, sans-serif; color: #0099FF;}--></style>");
         sb.append("</head><body><h2 align=\"center\" class=\"style2\">");
-        sb.append("ID2210 (Decentralized Search for BitTorrent)</h2><br>");
+        sb.append("ID2210 (Decentralized Search for Piratebay)</h2><br>");
         try {
             query(sb, title);
         } catch (ParseException ex) {
@@ -175,8 +177,12 @@ public final class Search extends ComponentDefinition {
         doc.add(new StringField("id", id, Field.Store.YES));
         w.addDocument(doc);
         w.close();
-        
         sb.append("Entry: (").append(title).append(", ").append(id).append(")");
+        
+        int idVal = Integer.parseInt(id);
+        if (idVal == latestMissingIndexValue + 1) {
+            latestMissingIndexValue++;
+        }
     }
 
     private String query(StringBuilder sb, String querystr) throws ParseException, IOException {
@@ -200,13 +206,13 @@ public final class Search extends ComponentDefinition {
         ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
         // display results
-        sb.append("<table><tr>Found ").append(hits.length).append(" entries.</tr>");
+        sb.append("Found ").append(hits.length).append(" entries.<ul>");
         for (int i = 0; i < hits.length; ++i) {
             int docId = hits[i].doc;
             Document d = searcher.doc(docId);
-            sb.append("<tr>").append(i + 1).append(". ").append(d.get("id")).append("\t").append(d.get("title")).append("</tr>");
+            sb.append("<li>").append(i + 1).append(". ").append(d.get("id")).append("\t").append(d.get("title")).append("</li>");
         }
-        sb.append("</table>");
+        sb.append("</ul>");
 
         // reader can only be closed when there
         // is no need to access the documents any more.

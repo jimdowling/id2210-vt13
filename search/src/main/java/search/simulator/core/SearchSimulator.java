@@ -49,8 +49,8 @@ public final class SearchSimulator extends ComponentDefinition {
     private CyclonConfiguration cyclonConfiguration;
     private SearchConfiguration searchConfiguration;
     private int peerIdSequence;
-    private BigInteger cyclonIdentifierSpaceSize;
-    private ConsistentHashtable<BigInteger> cyclonView;
+    private BigInteger identifierSpaceSize;
+    private ConsistentHashtable<BigInteger> allNodes;
     private AsIpGenerator ipGenerator = AsIpGenerator.getInstance(125);
     
     
@@ -59,7 +59,7 @@ public final class SearchSimulator extends ComponentDefinition {
     public SearchSimulator() {
         peers = new HashMap<BigInteger, Component>();
         peersAddress = new HashMap<BigInteger, PeerAddress>();
-        cyclonView = new ConsistentHashtable<BigInteger>();
+        allNodes = new ConsistentHashtable<BigInteger>();
 
         subscribe(handleInit, control);
         subscribe(handleGenerateReport, timer);
@@ -77,7 +77,7 @@ public final class SearchSimulator extends ComponentDefinition {
             cyclonConfiguration = init.getCyclonConfiguration();
             searchConfiguration = init.getAggregationConfiguration();
 
-            cyclonIdentifierSpaceSize = cyclonConfiguration.getIdentifierSpaceSize();
+            identifierSpaceSize = cyclonConfiguration.getIdentifierSpaceSize();
 
             // generate periodic report
             int snapshotPeriod = Configuration.SNAPSHOT_PERIOD;
@@ -95,31 +95,29 @@ public final class SearchSimulator extends ComponentDefinition {
             BigInteger id = event.getPeerId();
 
             // join with the next id if this id is taken
-            BigInteger successor = cyclonView.getNode(id);
+            BigInteger successor = allNodes.getNode(id);
 
             while (successor != null && successor.equals(id)) {
-                id = id.add(BigInteger.ONE).mod(cyclonIdentifierSpaceSize);
-                successor = cyclonView.getNode(id);
+                id = id.add(BigInteger.ONE).mod(identifierSpaceSize);
+                successor = allNodes.getNode(id);
             }
 
-            Component newPeer = createAndStartNewPeer(id, num);
-            cyclonView.addNode(id);
-
-            trigger(new JoinPeer(id), newPeer.getPositive(PeerPort.class));
+            createAndStartNewPeer(id, num);
+            allNodes.addNode(id);
         }
     };
 //-------------------------------------------------------------------	
     Handler<PeerFail> handlePeerFail = new Handler<PeerFail>() {
 
         public void handle(PeerFail event) {
-            BigInteger id = cyclonView.getNode(event.getCyclonId());
+            BigInteger id = allNodes.getNode(event.getCyclonId());
 
-            if (cyclonView.size() == 0) {
+            if (allNodes.size() == 0) {
                 System.err.println("Empty network");
                 return;
             }
 
-            cyclonView.removeNode(id);
+            allNodes.removeNode(id);
             stopAndDestroyPeer(id);
         }
     };
@@ -132,7 +130,7 @@ public final class SearchSimulator extends ComponentDefinition {
     };
 
 //-------------------------------------------------------------------	
-    private final Component createAndStartNewPeer(BigInteger id, int num) {
+    private final void createAndStartNewPeer(BigInteger id, int num) {
         Component peer = create(SearchPeer.class);
         int peerId = ++peerIdSequence;
         InetAddress ip = ipGenerator.generateIP();
@@ -149,7 +147,6 @@ public final class SearchSimulator extends ComponentDefinition {
         peers.put(id, peer);
         peersAddress.put(id, peerAddress);
 
-        return peer;
     }
 
 //-------------------------------------------------------------------	

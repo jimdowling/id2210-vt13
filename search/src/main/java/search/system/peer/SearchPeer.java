@@ -35,7 +35,6 @@ import tman.system.peer.tman.TManSamplePort;
 
 public final class SearchPeer extends ComponentDefinition {
 	
-	Negative<PeerPort> peerPort = negative(PeerPort.class);
 	Positive<Network> network = positive(Network.class);
 	Positive<Timer> timer = positive(Timer.class);
         Negative<Web> webPort = negative(Web.class);
@@ -72,7 +71,6 @@ public final class SearchPeer extends ComponentDefinition {
                         search.getNegative(TManSamplePort.class));
 		
 		subscribe(handleInit, control);
-		subscribe(handleJoin, peerPort);
 		subscribe(handleJoinCompleted, cyclon.getPositive(CyclonPort.class));
 		subscribe(handleBootstrapResponse, bootstrap.getPositive(P2pBootstrap.class));
 	}
@@ -90,18 +88,12 @@ public final class SearchPeer extends ComponentDefinition {
 
 			trigger(new CyclonInit(cyclonConfiguration), cyclon.getControl());
 			trigger(new BootstrapClientInit(self, init.getBootstrapConfiguration()), bootstrap.getControl());
-		}
-	};
-
-//-------------------------------------------------------------------	
-	Handler<JoinPeer> handleJoin = new Handler<JoinPeer>() {
-		public void handle(JoinPeer event) {
 			BootstrapRequest request = new BootstrapRequest("Cyclon", bootstrapRequestPeerCount);
 			trigger(request, bootstrap.getPositive(P2pBootstrap.class));
-			
 			Snapshot.addPeer(peerSelf);
 		}
 	};
+
 
 //-------------------------------------------------------------------	
 	Handler<BootstrapResponse> handleBootstrapResponse = new Handler<BootstrapResponse>() {
@@ -124,7 +116,6 @@ public final class SearchPeer extends ComponentDefinition {
 		public void handle(JoinCompleted event) {
 			trigger(new BootstrapCompleted("Cyclon", peerSelf), bootstrap.getPositive(P2pBootstrap.class));
 			trigger(new SearchInit(peerSelf, num, aggregationConfiguration), search.getControl());
-
 		}
 	};
 }

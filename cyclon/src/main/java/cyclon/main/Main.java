@@ -3,7 +3,7 @@ package cyclon.main;
 import common.configuration.Configuration;
 import common.simulation.scenarios.Scenario;
 import common.simulation.scenarios.Scenario2;
-import cyclon.simulator.core.CyclonSimulationMain;
+import cyclon.simulator.core.CyclonExecutionMain;
 
 
 public class Main {

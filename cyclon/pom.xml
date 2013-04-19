@@ -27,7 +27,7 @@
             <groupId>se.kth.id2210</groupId>
             <artifactId>id2210-common</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
+  
         </dependency>
         <dependency>
             <groupId>se.sics</groupId>

@@ -19,6 +19,8 @@ import se.sics.kompics.p2p.bootstrap.BootstrapConfiguration;
 import se.sics.kompics.p2p.bootstrap.server.BootstrapServer;
 import se.sics.kompics.p2p.bootstrap.server.BootstrapServerInit;
 import se.sics.kompics.p2p.experiment.dsl.SimulationScenario;
+import se.sics.kompics.p2p.orchestrator.P2pOrchestrator;
+import se.sics.kompics.p2p.orchestrator.P2pOrchestratorInit;
 import se.sics.kompics.p2p.simulator.P2pSimulator;
 import se.sics.kompics.p2p.simulator.P2pSimulatorInit;
 import se.sics.kompics.simulation.SimulatorScheduler;
@@ -28,24 +30,23 @@ import se.sics.kompics.web.jetty.JettyWebServer;
 import se.sics.kompics.web.jetty.JettyWebServerConfiguration;
 import se.sics.kompics.web.jetty.JettyWebServerInit;
 
-public final class SearchSimulationMain extends ComponentDefinition {
+public final class SearchExecutionMain extends ComponentDefinition {
 
-    private static SimulatorScheduler simulatorScheduler = new SimulatorScheduler();
     private static SimulationScenario scenario = SimulationScenario.load(System.getProperty("scenario"));
 
 //-------------------------------------------------------------------	
     public static void main(String[] args) {
-        Kompics.setScheduler(simulatorScheduler);
-        Kompics.createAndStart(SearchSimulationMain.class, 1);
+        
+        Kompics.createAndStart(SearchExecutionMain.class, 1);
     }
 
 //-------------------------------------------------------------------	
-    public SearchSimulationMain() throws IOException {
-        P2pSimulator.setSimulationPortType(SimulatorPort.class);
+    public SearchExecutionMain() throws IOException {
+        P2pOrchestrator.setSimulationPortType(SimulatorPort.class);
 
         // create
         Component bootstrapServer = create(BootstrapServer.class);
-        Component p2pSimulator = create(P2pSimulator.class);
+        Component p2pSimulator = create(P2pOrchestrator.class);
         Component simulator = create(SearchSimulator.class);
         Component web = create(JettyWebServer.class);
 
@@ -55,7 +56,7 @@ public final class SearchSimulationMain extends ComponentDefinition {
         final SearchConfiguration searchConfiguration = SearchConfiguration.load(System.getProperty("search.configuration"));
 
         trigger(new BootstrapServerInit(bootConfiguration), bootstrapServer.getControl());
-        trigger(new P2pSimulatorInit(simulatorScheduler, scenario, new KingLatencyMap()), p2pSimulator.getControl());
+        trigger(new P2pOrchestratorInit(scenario, new KingLatencyMap()), p2pSimulator.getControl());
         trigger(new SimulatorInit(bootConfiguration, cyclonConfiguration, null,
                 searchConfiguration), simulator.getControl());
 

@@ -21,9 +21,6 @@ import se.sics.kompics.p2p.bootstrap.server.BootstrapServerInit;
 import se.sics.kompics.p2p.experiment.dsl.SimulationScenario;
 import se.sics.kompics.p2p.orchestrator.P2pOrchestrator;
 import se.sics.kompics.p2p.orchestrator.P2pOrchestratorInit;
-import se.sics.kompics.p2p.simulator.P2pSimulator;
-import se.sics.kompics.p2p.simulator.P2pSimulatorInit;
-import se.sics.kompics.simulation.SimulatorScheduler;
 import se.sics.kompics.timer.Timer;
 import se.sics.kompics.web.Web;
 import se.sics.kompics.web.jetty.JettyWebServer;
@@ -37,7 +34,7 @@ public final class SearchExecutionMain extends ComponentDefinition {
 //-------------------------------------------------------------------	
     public static void main(String[] args) {
         
-        Kompics.createAndStart(SearchExecutionMain.class, 1);
+        Kompics.createAndStart(SearchExecutionMain.class, 2);
     }
 
 //-------------------------------------------------------------------	

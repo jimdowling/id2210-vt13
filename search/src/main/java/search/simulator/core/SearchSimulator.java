@@ -18,10 +18,8 @@ import se.sics.kompics.p2p.bootstrap.BootstrapConfiguration;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.Timer;
 
-import common.peer.JoinPeer;
 import search.system.peer.SearchPeer;
 import search.system.peer.SearchPeerInit;
-import common.peer.PeerPort;
 import common.peer.PeerAddress;
 import search.simulator.snapshot.Snapshot;
 import common.configuration.SearchConfiguration;

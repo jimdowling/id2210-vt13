@@ -225,6 +225,11 @@ public final class Search extends ComponentDefinition {
         public void handle(CyclonSample event) {
             // receive a new list of neighbours
             ArrayList<PeerAddress> sampleNodes = event.getSample();
+            
+            if (sampleNodes.size() > 0) {
+                logger.info("Search component {} received {} samples from Cyclon.",
+                        self.getPeerId(), sampleNodes.size());
+            }
             // Pick a node or more, and exchange index with them
         }
     };

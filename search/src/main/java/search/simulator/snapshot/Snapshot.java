@@ -47,7 +47,6 @@ public class Snapshot {
 
 //-------------------------------------------------------------------
 	public static void report() {
-            if (counter % 1000 == 0) {
 		String str = new String();
 		str += "current time: " + counter++ + "\n";
 		str += reportNetworkState();
@@ -56,7 +55,6 @@ public class Snapshot {
 		
 		System.out.println(str);
 		FileIO.append(str, FILENAME);
-            }
 	}
 
 //-------------------------------------------------------------------

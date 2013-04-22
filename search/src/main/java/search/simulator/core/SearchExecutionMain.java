@@ -34,7 +34,7 @@ public final class SearchExecutionMain extends ComponentDefinition {
 //-------------------------------------------------------------------	
     public static void main(String[] args) {
         
-        Kompics.createAndStart(SearchExecutionMain.class, 2);
+        Kompics.createAndStart(SearchExecutionMain.class, 1);
     }
 
 //-------------------------------------------------------------------	

@@ -18,28 +18,25 @@ import se.sics.kompics.p2p.bootstrap.BootstrapConfiguration;
 import se.sics.kompics.p2p.bootstrap.server.BootstrapServer;
 import se.sics.kompics.p2p.bootstrap.server.BootstrapServerInit;
 import se.sics.kompics.p2p.experiment.dsl.SimulationScenario;
-import se.sics.kompics.p2p.simulator.P2pSimulator;
-import se.sics.kompics.p2p.simulator.P2pSimulatorInit;
-import se.sics.kompics.simulation.SimulatorScheduler;
+import se.sics.kompics.p2p.orchestrator.P2pOrchestrator;
+import se.sics.kompics.p2p.orchestrator.P2pOrchestratorInit;
 import se.sics.kompics.timer.Timer;
 
-public final class CyclonSimulationMain extends ComponentDefinition {
-	private static SimulatorScheduler simulatorScheduler = new SimulatorScheduler();
+public final class CyclonExecutionMain extends ComponentDefinition {
 	private static SimulationScenario scenario = SimulationScenario.load(System.getProperty("scenario"));
 
 //-------------------------------------------------------------------	
 	public static void main(String[] args) {
-		Kompics.setScheduler(simulatorScheduler);
-		Kompics.createAndStart(CyclonSimulationMain.class, 1);
+		Kompics.createAndStart(CyclonExecutionMain.class, 1);
 	}
 
 //-------------------------------------------------------------------	
-	public CyclonSimulationMain() throws IOException {
-		P2pSimulator.setSimulationPortType(SimulatorPort.class);
+	public CyclonExecutionMain() throws IOException {
+		P2pOrchestrator.setSimulationPortType(SimulatorPort.class);
 
 		// create
 		Component bootstrapServer = create(BootstrapServer.class);
-		Component p2pSimulator = create(P2pSimulator.class);
+		Component p2pSimulator = create(P2pOrchestrator.class);
 		Component simulator = create(CyclonSimulator.class);
                 
 		// loading component configurations
@@ -47,7 +44,7 @@ public final class CyclonSimulationMain extends ComponentDefinition {
 		final CyclonConfiguration cyclonConfiguration = CyclonConfiguration.load(System.getProperty("cyclon.configuration"));
 
 		trigger(new BootstrapServerInit(bootConfiguration), bootstrapServer.getControl());
-		trigger(new P2pSimulatorInit(simulatorScheduler, scenario, new KingLatencyMap()), p2pSimulator.getControl());
+		trigger(new P2pOrchestratorInit(scenario, new KingLatencyMap()), p2pSimulator.getControl());
 		trigger(new SimulatorInit(bootConfiguration, cyclonConfiguration, 
                         null, null), simulator.getControl());
                 
@@ -55,13 +52,13 @@ public final class CyclonSimulationMain extends ComponentDefinition {
 
 		// connect
 		connect(bootstrapServer.getNegative(Network.class), 
-                        p2pSimulator.getPositive(Network.class), new CyclonSimulationMain.MessageDestinationFilter(bootConfiguration.getBootstrapServerAddress()));
+                        p2pSimulator.getPositive(Network.class), new MessageDestinationFilter(bootConfiguration.getBootstrapServerAddress()));
 		connect(bootstrapServer.getNegative(Timer.class), p2pSimulator.getPositive(Timer.class));
 		connect(simulator.getNegative(Network.class), p2pSimulator.getPositive(Network.class));
 		connect(simulator.getNegative(Timer.class), p2pSimulator.getPositive(Timer.class));
 		connect(simulator.getNegative(SimulatorPort.class), p2pSimulator.getPositive(SimulatorPort.class));                
 	}
-	
+
 //-------------------------------------------------------------------	
 	private final static class MessageDestinationFilter extends ChannelFilter<Message, Address> {
 		public MessageDestinationFilter(Address address) {

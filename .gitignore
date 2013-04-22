@@ -7,3 +7,8 @@
 target/*
 /tman/target/
 /search/target/
+*.iml
+.idea/
+*.out
+
+*.properties

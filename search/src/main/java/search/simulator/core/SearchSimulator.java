@@ -57,7 +57,7 @@ public final class SearchSimulator extends ComponentDefinition {
 
     static String[] articles = {" ", "The ", "A "};
     static String[] verbs = {"fires ", "walks ", "talks ", "types ", "programs "};
-    static String[] subjects = {"computer ", "Lucene ", "torrent"};
+    static String[] subjects = {"computer ", "Lucene ", "torrent "};
     static String[] objects = {"computer", "java", "video"};
     Random r = new Random(System.currentTimeMillis());
     

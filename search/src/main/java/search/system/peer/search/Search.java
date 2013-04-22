@@ -7,6 +7,8 @@ import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Random;
 import java.util.logging.Level;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -58,6 +60,10 @@ public final class Search extends ComponentDefinition {
     Negative<Web> webPort = negative(Web.class);
     Positive<CyclonSamplePort> cyclonSamplePort = positive(CyclonSamplePort.class);
     Positive<TManSamplePort> tmanSamplePort = positive(TManSamplePort.class);
+
+    ArrayList<PeerAddress> neighbours = new ArrayList<PeerAddress>();
+    Random randomGenerator = new Random();
+    ArrayList<Integer> indexStore = new ArrayList<Integer>();
     private PeerAddress self;
     private long period;
     private double num;
@@ -78,6 +84,7 @@ public final class Search extends ComponentDefinition {
         subscribe(handleCyclonSample, cyclonSamplePort);
         subscribe(handleTManSample, tmanSamplePort);
         subscribe(handleAddIndexText, indexPort);
+        subscribe(getUpdatesHandler, networkPort);
     }
 //-------------------------------------------------------------------	
     Handler<SearchInit> handleInit = new Handler<SearchInit>() {
@@ -105,8 +112,49 @@ public final class Search extends ComponentDefinition {
 //-------------------------------------------------------------------	
     Handler<UpdateIndexTimeout> handleUpdateIndex = new Handler<UpdateIndexTimeout>() {
         public void handle(UpdateIndexTimeout event) {
+            if(neighbours.size() == 0)
+                return;
+
+            int rand = randomGenerator.nextInt(neighbours.size());
+            PeerAddress selectedPeer = neighbours.get(rand);
+
+            ArrayList<Range> missingValues = new ArrayList<Range>();
+
+            int i=0;
+
+            if (indexStore.get(i)!=0) {
+                Range range =new Range(0,indexStore.get(0)-1);
+                missingValues.add(range);
+            }
+
+            while (i<indexStore.size()-1) {
+                if(indexStore.get(i) == indexStore.get(i+1)) {
+                    i++;
+                    continue;
+                }
+
+                Range range = new Range(indexStore.get(i)+1, indexStore.get(i+1)-1);
+                missingValues.add(range);
+                i++;
+            }
+
+            trigger(new GetUpdates(missingValues, indexStore.get(indexStore.size()-1), self, selectedPeer), networkPort);
         }
     };
+
+    Handler<GetUpdates> getUpdatesHandler = new Handler<GetUpdates>() {
+        @Override
+        public void handle(GetUpdates getUpdates) {
+            ArrayList<Range> ranges = getUpdates.getMissingRanges();
+
+            for(Range range : ranges){
+                logger.info(String.format("%s - Range [%s, %s]", self.getPeerAddress().getId(), range.getLeft(), range.getRight()));
+            }
+
+            logger.info(String.format("%s - Last: %s", self.getPeerAddress().getId(), getUpdates.getLastExisting()));
+        }
+    };
+
     Handler<WebRequest> handleWebRequest = new Handler<WebRequest>() {
         public void handle(WebRequest event) {
             if (event.getDestination() != self.getPeerAddress().getId()) {
@@ -185,8 +233,13 @@ public final class Search extends ComponentDefinition {
         doc.add(new StringField("id", id, Field.Store.YES));
         w.addDocument(doc);
         w.close();
-        
+
+
         int idVal = Integer.parseInt(id);
+        indexStore.add(idVal);
+        Collections.sort(indexStore);
+
+
         if (idVal == latestMissingIndexValue + 1) {
             latestMissingIndexValue++;
         }
@@ -231,7 +284,7 @@ public final class Search extends ComponentDefinition {
         @Override
         public void handle(CyclonSample event) {
             // receive a new list of neighbours
-            ArrayList<PeerAddress> sampleNodes = event.getSample();
+            neighbours = event.getSample();
             // Pick a node or more, and exchange index with them
         }
     };

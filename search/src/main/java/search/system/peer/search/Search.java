@@ -79,12 +79,10 @@ public final class Search extends ComponentDefinition {
     public Search() {
 
         subscribe(handleInit, control);
-        subscribe(handleUpdateIndex, timerPort);
         subscribe(handleWebRequest, webPort);
         subscribe(handleCyclonSample, cyclonSamplePort);
         subscribe(handleTManSample, tmanSamplePort);
         subscribe(handleAddIndexText, indexPort);
-        subscribe(getUpdatesHandler, networkPort);
     }
 //-------------------------------------------------------------------	
     Handler<SearchInit> handleInit = new Handler<SearchInit>() {
@@ -109,51 +107,7 @@ public final class Search extends ComponentDefinition {
             }
         }
     };
-//-------------------------------------------------------------------	
-    Handler<UpdateIndexTimeout> handleUpdateIndex = new Handler<UpdateIndexTimeout>() {
-        public void handle(UpdateIndexTimeout event) {
-            if(neighbours.size() == 0)
-                return;
 
-            int rand = randomGenerator.nextInt(neighbours.size());
-            PeerAddress selectedPeer = neighbours.get(rand);
-
-            ArrayList<Range> missingValues = new ArrayList<Range>();
-
-            int i=0;
-
-            if (indexStore.get(i)!=0) {
-                Range range =new Range(0,indexStore.get(0)-1);
-                missingValues.add(range);
-            }
-
-            while (i<indexStore.size()-1) {
-                if(indexStore.get(i) == indexStore.get(i+1)) {
-                    i++;
-                    continue;
-                }
-
-                Range range = new Range(indexStore.get(i)+1, indexStore.get(i+1)-1);
-                missingValues.add(range);
-                i++;
-            }
-
-            trigger(new GetUpdates(missingValues, indexStore.get(indexStore.size()-1), self, selectedPeer), networkPort);
-        }
-    };
-
-    Handler<GetUpdates> getUpdatesHandler = new Handler<GetUpdates>() {
-        @Override
-        public void handle(GetUpdates getUpdates) {
-            ArrayList<Range> ranges = getUpdates.getMissingRanges();
-
-            for(Range range : ranges){
-                logger.info(String.format("%s - Range [%s, %s]", self.getPeerAddress().getId(), range.getLeft(), range.getRight()));
-            }
-
-            logger.info(String.format("%s - Last: %s", self.getPeerAddress().getId(), getUpdates.getLastExisting()));
-        }
-    };
 
     Handler<WebRequest> handleWebRequest = new Handler<WebRequest>() {
         public void handle(WebRequest event) {

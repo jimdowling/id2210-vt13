@@ -1,4 +1,3 @@
-
 package cyclon.simulator.core;
 
 import common.configuration.CyclonConfiguration;

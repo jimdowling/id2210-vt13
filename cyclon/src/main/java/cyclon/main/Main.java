@@ -13,6 +13,6 @@ public class Main {
 		
 		Scenario scenario = new Scenario2();
 		scenario.setSeed(System.currentTimeMillis());
-		scenario.getScenario().execute(CyclonExecutionMain.class);
+		scenario.getScenario().simulate(CyclonExecutionMain.class);
 	}
 }

@@ -1,7 +1,5 @@
 package search.system.peer;
 
-import common.peer.PeerPort;
-import common.peer.JoinPeer;
 import java.util.LinkedList;
 import java.util.Set;
 
@@ -34,8 +32,10 @@ import tman.system.peer.tman.TManSamplePort;
 
 
 public final class SearchPeer extends ComponentDefinition {
-	
-	Positive<Network> network = positive(Network.class);
+
+    	Positive<IndexPort> indexPort = positive(IndexPort.class);
+
+        Positive<Network> network = positive(Network.class);
 	Positive<Timer> timer = positive(Timer.class);
         Negative<Web> webPort = negative(Web.class);
 	
@@ -69,6 +69,9 @@ public final class SearchPeer extends ComponentDefinition {
                         tman.getNegative(CyclonSamplePort.class));
 		connect(tman.getPositive(TManSamplePort.class), 
                         search.getNegative(TManSamplePort.class));
+
+                connect(indexPort, 
+                        search.getNegative(IndexPort.class));
 		
 		subscribe(handleInit, control);
 		subscribe(handleJoinCompleted, cyclon.getPositive(CyclonPort.class));

@@ -18,24 +18,26 @@ import se.sics.kompics.p2p.bootstrap.BootstrapConfiguration;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.Timer;
 
-import common.peer.JoinPeer;
 import search.system.peer.SearchPeer;
 import search.system.peer.SearchPeerInit;
-import common.peer.PeerPort;
 import common.peer.PeerAddress;
 import search.simulator.snapshot.Snapshot;
 import common.configuration.SearchConfiguration;
 import common.configuration.Configuration;
 import common.configuration.CyclonConfiguration;
+import common.simulation.AddIndexEntry;
 import common.simulation.ConsistentHashtable;
 import common.simulation.GenerateReport;
 import common.simulation.PeerFail;
 import common.simulation.PeerJoin;
 import common.simulation.SimulatorInit;
 import java.net.InetAddress;
+import java.util.Random;
 import se.sics.ipasdistances.AsIpGenerator;
 import se.sics.kompics.Negative;
 import se.sics.kompics.web.Web;
+import search.system.peer.AddIndexText;
+import search.system.peer.IndexPort;
 
 public final class SearchSimulator extends ComponentDefinition {
 
@@ -50,25 +52,30 @@ public final class SearchSimulator extends ComponentDefinition {
     private SearchConfiguration searchConfiguration;
     private int peerIdSequence;
     private BigInteger identifierSpaceSize;
-    private ConsistentHashtable<BigInteger> allNodes;
+    private ConsistentHashtable<BigInteger> ringNodes;
     private AsIpGenerator ipGenerator = AsIpGenerator.getInstance(125);
+
+    static String[] articles = {" ", "The ", "A "};
+    static String[] verbs = {"fires ", "walks ", "talks ", "types ", "programs "};
+    static String[] subjects = {"computer ", "Lucene ", "torrent"};
+    static String[] objects = {"computer", "java", "video"};
+    Random r = new Random(System.currentTimeMillis());
     
     
 //-------------------------------------------------------------------	
-
     public SearchSimulator() {
         peers = new HashMap<BigInteger, Component>();
         peersAddress = new HashMap<BigInteger, PeerAddress>();
-        allNodes = new ConsistentHashtable<BigInteger>();
+        ringNodes = new ConsistentHashtable<BigInteger>();
 
         subscribe(handleInit, control);
         subscribe(handleGenerateReport, timer);
         subscribe(handlePeerJoin, simulator);
         subscribe(handlePeerFail, simulator);
+        subscribe(handleAddIndexEntry, simulator);
     }
 //-------------------------------------------------------------------	
     Handler<SimulatorInit> handleInit = new Handler<SimulatorInit>() {
-
         public void handle(SimulatorInit init) {
             peers.clear();
             peerIdSequence = 0;
@@ -84,46 +91,67 @@ public final class SearchSimulator extends ComponentDefinition {
             SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(snapshotPeriod, snapshotPeriod);
             spt.setTimeoutEvent(new GenerateReport(spt));
             trigger(spt, timer);
+
+        }
+    };
+    
+    String randomText() {
+        StringBuilder sb = new StringBuilder();
+        int clauses = Math.max(1, r.nextInt(3));
+        for (int i = 0; i < clauses; i++) {
+                sb.append(articles[r.nextInt(articles.length)]);
+                sb.append(subjects[r.nextInt(subjects.length)]);
+                sb.append(verbs[r.nextInt(verbs.length)]);
+                sb.append(objects[r.nextInt(objects.length)]);
+                sb.append(". ");
+        }
+        return sb.toString();
+    }
+    
+//-------------------------------------------------------------------	
+    Handler<AddIndexEntry> handleAddIndexEntry = new Handler<AddIndexEntry>() {
+        @Override
+        public void handle(AddIndexEntry event) {
+            BigInteger successor = ringNodes.getNode(event.getId());
+            Component peer = peers.get(successor);
             
+            trigger(new AddIndexText(randomText()), peer.getNegative(IndexPort.class));
         }
     };
 //-------------------------------------------------------------------	
     Handler<PeerJoin> handlePeerJoin = new Handler<PeerJoin>() {
-
         public void handle(PeerJoin event) {
             int num = event.getNum();
             BigInteger id = event.getPeerId();
 
             // join with the next id if this id is taken
-            BigInteger successor = allNodes.getNode(id);
+            BigInteger successor = ringNodes.getNode(id);
 
             while (successor != null && successor.equals(id)) {
                 id = id.add(BigInteger.ONE).mod(identifierSpaceSize);
-                successor = allNodes.getNode(id);
+                successor = ringNodes.getNode(id);
             }
 
             createAndStartNewPeer(id, num);
-            allNodes.addNode(id);
+            ringNodes.addNode(id);
         }
     };
 //-------------------------------------------------------------------	
     Handler<PeerFail> handlePeerFail = new Handler<PeerFail>() {
-
         public void handle(PeerFail event) {
-            BigInteger id = allNodes.getNode(event.getCyclonId());
+            BigInteger id = ringNodes.getNode(event.getCyclonId());
 
-            if (allNodes.size() == 0) {
+            if (ringNodes.size() == 0) {
                 System.err.println("Empty network");
                 return;
             }
 
-            allNodes.removeNode(id);
+            ringNodes.removeNode(id);
             stopAndDestroyPeer(id);
         }
     };
 //-------------------------------------------------------------------	
     Handler<GenerateReport> handleGenerateReport = new Handler<GenerateReport>() {
-
         public void handle(GenerateReport event) {
             Snapshot.report();
         }
@@ -165,7 +193,7 @@ public final class SearchSimulator extends ComponentDefinition {
 
         destroy(peer);
     }
-   
+
 //-------------------------------------------------------------------	
     private final static class MessageDestinationFilter extends ChannelFilter<Message, Address> {
 
@@ -177,5 +205,4 @@ public final class SearchSimulator extends ComponentDefinition {
             return event.getDestination();
         }
     }
-    
 }

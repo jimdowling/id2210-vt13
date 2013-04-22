@@ -55,7 +55,7 @@ public final class CyclonSimulationMain extends ComponentDefinition {
 
 		// connect
 		connect(bootstrapServer.getNegative(Network.class), 
-                        p2pSimulator.getPositive(Network.class), new MessageDestinationFilter(bootConfiguration.getBootstrapServerAddress()));
+                        p2pSimulator.getPositive(Network.class), new CyclonSimulationMain.MessageDestinationFilter(bootConfiguration.getBootstrapServerAddress()));
 		connect(bootstrapServer.getNegative(Timer.class), p2pSimulator.getPositive(Timer.class));
 		connect(simulator.getNegative(Network.class), p2pSimulator.getPositive(Network.class));
 		connect(simulator.getNegative(Timer.class), p2pSimulator.getPositive(Timer.class));

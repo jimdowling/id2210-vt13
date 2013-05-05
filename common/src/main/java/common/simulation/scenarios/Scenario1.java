@@ -7,17 +7,23 @@ public class Scenario1 extends Scenario {
 	private static SimulationScenario scenario = new SimulationScenario() {{
 		StochasticProcess process1 = new StochasticProcess() {{
 			eventInterArrivalTime(constant(100));
-			raise(2, Operations.peerJoin(5), uniform(13));
+			raise(2, Operations.peerJoin(5), 
+                                uniform(0, Integer.MAX_VALUE)
+                             );
 		}};
 		
 		StochasticProcess process2 = new StochasticProcess() {{
 			eventInterArrivalTime(constant(100));
-			raise(5, Operations.peerJoin(5), uniform(13));
+			raise(5, Operations.peerJoin(5), 
+                                uniform(0, Integer.MAX_VALUE)
+                                );
 		}};
 		
 		StochasticProcess process3 = new StochasticProcess() {{
 			eventInterArrivalTime(constant(100));
-			raise(100, Operations.addIndexEntry(), uniform(13));
+			raise(100, Operations.addIndexEntry(), 
+                                uniform(0, Integer.MAX_VALUE)
+                                );
 		}};
 
 		process1.start();

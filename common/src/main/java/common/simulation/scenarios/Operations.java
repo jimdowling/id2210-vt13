@@ -4,33 +4,32 @@ import common.simulation.AddIndexEntry;
 import common.simulation.PeerFail;
 import common.simulation.PeerJoin;
 import common.simulation.Publish;
-import java.math.BigInteger;
 import se.sics.kompics.p2p.experiment.dsl.adaptor.Operation;
 import se.sics.kompics.p2p.experiment.dsl.adaptor.Operation1;
 
 @SuppressWarnings("serial")
 public class Operations {
 
-  	public static Operation1<AddIndexEntry, BigInteger> addIndexEntry() {
-		return new Operation1<AddIndexEntry, BigInteger>() {
+  	public static Operation1<AddIndexEntry, Long> addIndexEntry() {
+		return new Operation1<AddIndexEntry, Long>() {
                         @Override
-			public AddIndexEntry generate(BigInteger id) {
+			public AddIndexEntry generate(Long id) {
 				return new AddIndexEntry(id);
 			}
 		};
 	}
 //-------------------------------------------------------------------
-	public static Operation1<PeerJoin, BigInteger> peerJoin(final int num) {
-		return new Operation1<PeerJoin, BigInteger>() {
-			public PeerJoin generate(BigInteger id) {
+	public static Operation1<PeerJoin, Long> peerJoin(final int num) {
+		return new Operation1<PeerJoin, Long>() {
+			public PeerJoin generate(Long id) {
 				return new PeerJoin(id, num);
 			}
 		};
 	}
 
 //-------------------------------------------------------------------
-	public static Operation1<PeerFail, BigInteger> peerFail = new Operation1<PeerFail, BigInteger>() {
-		public PeerFail generate(BigInteger id) {
+	public static Operation1<PeerFail, Long> peerFail = new Operation1<PeerFail, Long>() {
+		public PeerFail generate(Long id) {
 			return new PeerFail(id);
 		}
 	};

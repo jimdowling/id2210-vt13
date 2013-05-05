@@ -2,16 +2,16 @@ package cyclon.system.peer.cyclon;
 
 import java.util.ArrayList;
 
-import common.peer.PeerAddress;
 
 import se.sics.kompics.Event;
+import se.sics.kompics.address.Address;
 
 
 public class CyclonPartnersResponse extends Event {
-	ArrayList<PeerAddress> partners = new ArrayList<PeerAddress>();
+	ArrayList<Address> partners = new ArrayList<Address>();
 
 //-------------------------------------------------------------------
-	public CyclonPartnersResponse(ArrayList<PeerAddress> partners) {
+	public CyclonPartnersResponse(ArrayList<Address> partners) {
 		this.partners = partners;
 	}
         
@@ -19,7 +19,7 @@ public class CyclonPartnersResponse extends Event {
 	}
 
 //-------------------------------------------------------------------
-	public ArrayList<PeerAddress> getPartners() {
+	public ArrayList<Address> getPartners() {
 		return this.partners;
 	}
 }

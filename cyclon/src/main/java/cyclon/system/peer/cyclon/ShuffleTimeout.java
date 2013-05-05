@@ -1,22 +1,22 @@
 package cyclon.system.peer.cyclon;
 
+import se.sics.kompics.address.Address;
 import se.sics.kompics.timer.ScheduleTimeout;
 import se.sics.kompics.timer.Timeout;
 
-import common.peer.PeerAddress;
 
 public class ShuffleTimeout extends Timeout {
 
-	private final PeerAddress peer;
+	private final Address peer;
 
 //-------------------------------------------------------------------
-	public ShuffleTimeout(ScheduleTimeout request, PeerAddress peer) {
+	public ShuffleTimeout(ScheduleTimeout request, Address peer) {
 		super(request);
 		this.peer = peer;
 	}
 
 //-------------------------------------------------------------------
-	public PeerAddress getPeer() {
+	public Address getPeer() {
 		return peer;
 	}
 }

@@ -1,14 +1,14 @@
 package cyclon.system.peer.cyclon;
 
 import java.util.HashSet;
+import se.sics.kompics.address.Address;
 
-import common.peer.PeerAddress;
 
 public class ViewEntry {
 	private final PeerDescriptor descriptor;
 	private final long addedAt;
 	private long sentAt;
-	private HashSet<PeerAddress> sentTo;
+	private HashSet<Address> sentTo;
 
 //-------------------------------------------------------------------
 	public ViewEntry(PeerDescriptor descriptor) {
@@ -24,9 +24,9 @@ public class ViewEntry {
 	}
 
 //-------------------------------------------------------------------
-	public void sentTo(PeerAddress peer) {
+	public void sentTo(Address peer) {
 		if (sentTo == null) {
-			sentTo = new HashSet<PeerAddress>();
+			sentTo = new HashSet<Address>();
 		}
 		sentTo.add(peer);
 		sentAt = System.currentTimeMillis();
@@ -48,7 +48,7 @@ public class ViewEntry {
 	}
 
 //-------------------------------------------------------------------
-	public boolean wasSentTo(PeerAddress peer) {
+	public boolean wasSentTo(Address peer) {
 		return sentTo == null ? false : sentTo.contains(peer);
 	}
 

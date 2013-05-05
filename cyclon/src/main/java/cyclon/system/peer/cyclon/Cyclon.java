@@ -1,7 +1,6 @@
 package cyclon.system.peer.cyclon;
 
 import common.configuration.CyclonConfiguration;
-import common.peer.PeerAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -18,6 +17,7 @@ import se.sics.kompics.timer.ScheduleTimeout;
 import se.sics.kompics.timer.Timer;
 
 import cyclon.simulator.snapshot.Snapshot;
+import se.sics.kompics.address.Address;
 
 public final class Cyclon extends ComponentDefinition {
 
@@ -27,18 +27,18 @@ public final class Cyclon extends ComponentDefinition {
 	Positive<Network> networkPort = positive(Network.class);
 	Positive<Timer> timerPort = positive(Timer.class);
 
-	private PeerAddress self;
+	private Address self;
 	private int shuffleLength;
 	private long shufflePeriod;
 	private long shuffleTimeout;
 	private Cache cache;
 	private boolean joining;
 	private CyclonConfiguration cyclonConfiguration;
-	private HashMap<UUID, PeerAddress> outstandingRandomShuffles;
+	private HashMap<UUID, Address> outstandingRandomShuffles;
 
 //-------------------------------------------------------------------	
 	public Cyclon() {
-		outstandingRandomShuffles = new HashMap<UUID, PeerAddress>();
+		outstandingRandomShuffles = new HashMap<UUID, Address>();
 
 		subscribe(handleInit, control);
 		subscribe(handleJoin, cyclonPort);
@@ -69,7 +69,7 @@ public final class Cyclon extends ComponentDefinition {
 			self = event.getSelf();
 			cache = new Cache(cyclonConfiguration.getRandomViewSize(), self);
 			
-			LinkedList<PeerAddress> insiders = event.getCyclonInsiders();
+			LinkedList<Address> insiders = event.getCyclonInsiders();
 
 			if (insiders.size() == 0) {
 				// I am the first peer
@@ -82,7 +82,7 @@ public final class Cyclon extends ComponentDefinition {
 				return;
 			}
 
-			PeerAddress peer = insiders.poll();
+			Address peer = insiders.poll();
 			initiateShuffle(1, peer);
 			joining = true;
 		}
@@ -97,7 +97,7 @@ public final class Cyclon extends ComponentDefinition {
 	 * @param shuffleSize
 	 * @param randomPeer
 	 */
-	private void initiateShuffle(int shuffleSize, PeerAddress randomPeer) {
+	private void initiateShuffle(int shuffleSize, Address randomPeer) {
 		// send the random view to a random peer
 		ArrayList<PeerDescriptor> randomDescriptors = cache.selectToSendAtActive(shuffleSize - 1, randomPeer);
 		randomDescriptors.add(new PeerDescriptor(self));
@@ -123,7 +123,7 @@ public final class Cyclon extends ComponentDefinition {
 		public void handle(InitiateShuffle event) {
 			cache.incrementDescriptorAges();
 			
-			PeerAddress randomPeer = cache.selectPeerToShuffleWith();
+			Address randomPeer = cache.selectPeerToShuffleWith();
 			Snapshot.incSelectedTimes(randomPeer);
 			
 			if (randomPeer != null) {
@@ -136,11 +136,12 @@ public final class Cyclon extends ComponentDefinition {
 //-------------------------------------------------------------------	
 	Handler<ShuffleRequest> handleShuffleRequest = new Handler<ShuffleRequest>() {
 		public void handle(ShuffleRequest event) {
-			PeerAddress peer = event.getPeerSource();
+			Address peer = event.getRandomBuffer().getFrom();
 			DescriptorBuffer receivedRandomBuffer = event.getRandomBuffer();
 			DescriptorBuffer toSendRandomBuffer = new DescriptorBuffer(self, cache.selectToSendAtPassive(receivedRandomBuffer.getSize(), peer));
 			cache.selectToKeep(peer, receivedRandomBuffer.getDescriptors());
-			ShuffleResponse response = new ShuffleResponse(event.getRequestId(), toSendRandomBuffer, self, peer);
+			ShuffleResponse response = new ShuffleResponse(event.getRequestId(), 
+                                toSendRandomBuffer, self, peer);
 			trigger(response, networkPort);
 			
 			Snapshot.updateCyclonPartners(self, getPartners());
@@ -168,7 +169,7 @@ public final class Cyclon extends ComponentDefinition {
 				trigger(ct, timerPort);
 			}
 
-			PeerAddress peer = event.getPeerSource();
+			Address peer = event.getSource();
 			DescriptorBuffer receivedRandomBuffer = event.getRandomBuffer();
 			cache.selectToKeep(peer, receivedRandomBuffer.getDescriptors());
 			
@@ -191,11 +192,11 @@ public final class Cyclon extends ComponentDefinition {
 	};
 	
 //-------------------------------------------------------------------
-	private ArrayList<PeerAddress> getPartners() {
+	private ArrayList<Address> getPartners() {
 		ArrayList<PeerDescriptor> partnersDescriptors = cache.getAll();
-		ArrayList<PeerAddress> partners = new ArrayList<PeerAddress>();
+		ArrayList<Address> partners = new ArrayList<Address>();
 		for (PeerDescriptor desc : partnersDescriptors)
-			partners.add(desc.getPeerAddress());
+			partners.add(desc.getAddress());
 		
 		return partners;
 	}

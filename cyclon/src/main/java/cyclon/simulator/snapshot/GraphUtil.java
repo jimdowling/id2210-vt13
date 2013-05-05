@@ -1,13 +1,13 @@
 package cyclon.simulator.snapshot;
 
 
-import common.peer.PeerAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
 import org.apache.commons.math.stat.descriptive.SummaryStatistics;
+import se.sics.kompics.address.Address;
 
 import se.sics.kompics.p2p.overlay.OverlayAddress;
 
@@ -26,7 +26,7 @@ public class GraphUtil {
 	private SummaryStatistics inStats = new SummaryStatistics();
 	
 //-------------------------------------------------------------------
-	public void init(HashMap<PeerAddress, PeerInfo> alivePeers) {
+	public void init(HashMap<Address, PeerInfo> alivePeers) {
 		this.n = alivePeers.size();
 		this.inDegree = new double[this.n];
 		this.outDegree = new int[this.n];
@@ -36,15 +36,14 @@ public class GraphUtil {
 
 		byte m[][] = new byte[this.n][this.n];
 		int dist[][] = new int[this.n][this.n];
-		PeerAddress[] a = new PeerAddress[this.n];
-		HashMap<PeerAddress, Integer> map = new HashMap<PeerAddress, Integer>();
+		Address[] a = new Address[this.n];
+		HashMap<Address, Integer> map = new HashMap<Address, Integer>();
 
 		{
 			int p = 0;
-			for (OverlayAddress address : alivePeers.keySet()) {
-				PeerAddress src = (PeerAddress) address;
-				a[p] = src;
-				map.put(src, p);
+			for (Address addr : alivePeers.keySet()) {
+				a[p] = addr;
+				map.put(addr, p);
 				p++;
 			}
 		}
@@ -54,14 +53,14 @@ public class GraphUtil {
 		{
 			try {
 				for (int s = 0; s < a.length; s++) {
-					PeerAddress src = a[s];
-					ArrayList<PeerAddress> neigh = alivePeers.get(src).getPartners();
+					Address src = a[s];
+					ArrayList<Address> neigh = alivePeers.get(src).getPartners();
 					
 					
 					int nn = 0;
 					if (neigh != null) {
-						for (PeerAddress desc : neigh) {
-							PeerAddress dst = desc;
+						for (Address desc : neigh) {
+							Address dst = desc;
 							
 							if (!map.containsKey(dst))
 								continue;
@@ -78,8 +77,8 @@ public class GraphUtil {
 					
 					if (neigh != null) {
 						nn = 0;
-						for (PeerAddress desc : neigh) {
-							PeerAddress dst = desc;
+						for (Address desc : neigh) {
+							Address dst = desc;
 							if (map.containsKey(dst))
 								this.neighbors[s][nn++] = map.get(dst);					
 						}

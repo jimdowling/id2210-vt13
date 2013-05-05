@@ -1,35 +1,34 @@
 package common.peer;
 
-import java.math.BigInteger;
 
 import se.sics.kompics.address.Address;
 import se.sics.kompics.p2p.overlay.OverlayAddress;
 
 public final class PeerAddress extends OverlayAddress implements Comparable<PeerAddress> {
 	private static final long serialVersionUID = -7582889514221620065L;
-	private final BigInteger peerId;
 
 //-------------------------------------------------------------------
-	public PeerAddress(Address address, BigInteger peerId) {
+	public PeerAddress(Address address) {
 		super(address);
-		this.peerId = peerId;
-	}
-
-//-------------------------------------------------------------------
-	public BigInteger getPeerId() {
-		return peerId;
 	}
 
 //-------------------------------------------------------------------
 	@Override
 	public int compareTo(PeerAddress that) {
-		return peerId.compareTo(that.peerId);
+            if (id() > that.getPeerAddress().getId()) {
+                return 1;
+           } 
+            return -1;
 	}
 
+        private int id() {
+            return this.getPeerAddress().getId();
+        }
+        
 //-------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return peerId.toString();
+		return Integer.toString(id());
 	}
 
 //-------------------------------------------------------------------
@@ -38,7 +37,7 @@ public final class PeerAddress extends OverlayAddress implements Comparable<Peer
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result
-				+ ((peerId == null) ? 0 : peerId.hashCode());
+				+ (id() );
 		return result;
 	}
 
@@ -52,10 +51,7 @@ public final class PeerAddress extends OverlayAddress implements Comparable<Peer
 		if (getClass() != obj.getClass())
 			return false;
 		PeerAddress other = (PeerAddress) obj;
-		if (peerId == null) {
-			if (other.peerId != null)
-				return false;
-		} else if (!peerId.equals(other.peerId))
+		if (id() != other.id())
 			return false;
 		return true;
 	}

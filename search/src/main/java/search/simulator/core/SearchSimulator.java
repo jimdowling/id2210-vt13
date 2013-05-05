@@ -1,7 +1,6 @@
 package search.simulator.core;
 
 import common.simulation.SimulatorPort;
-import java.math.BigInteger;
 import java.util.HashMap;
 
 import se.sics.kompics.ChannelFilter;
@@ -20,7 +19,6 @@ import se.sics.kompics.timer.Timer;
 
 import search.system.peer.SearchPeer;
 import search.system.peer.SearchPeerInit;
-import common.peer.PeerAddress;
 import search.simulator.snapshot.Snapshot;
 import common.configuration.SearchConfiguration;
 import common.configuration.Configuration;
@@ -36,6 +34,8 @@ import java.util.Random;
 import se.sics.ipasdistances.AsIpGenerator;
 import se.sics.kompics.Negative;
 import se.sics.kompics.web.Web;
+import se.sics.kompics.web.WebRequest;
+import se.sics.kompics.web.WebResponse;
 import search.system.peer.AddIndexText;
 import search.system.peer.IndexPort;
 
@@ -45,16 +45,15 @@ public final class SearchSimulator extends ComponentDefinition {
     Positive<Network> network = positive(Network.class);
     Positive<Timer> timer = positive(Timer.class);
     Negative<Web> webIncoming = negative(Web.class);
-    private final HashMap<BigInteger, Component> peers;
-    private final HashMap<BigInteger, PeerAddress> peersAddress;
+    private final HashMap<Long, Component> peers;
+    private final HashMap<Long, Address> peersAddress;
     private BootstrapConfiguration bootstrapConfiguration;
     private CyclonConfiguration cyclonConfiguration;
     private SearchConfiguration searchConfiguration;
-    private int peerIdSequence;
-    private BigInteger identifierSpaceSize;
-    private ConsistentHashtable<BigInteger> ringNodes;
+    private Long identifierSpaceSize;
+    private ConsistentHashtable<Long> ringNodes;
     private AsIpGenerator ipGenerator = AsIpGenerator.getInstance(125);
-
+    
     static String[] articles = {" ", "The ", "A "};
     static String[] verbs = {"fires ", "walks ", "talks ", "types ", "programs "};
     static String[] subjects = {"computer ", "Lucene ", "torrent "};
@@ -64,21 +63,21 @@ public final class SearchSimulator extends ComponentDefinition {
     
 //-------------------------------------------------------------------	
     public SearchSimulator() {
-        peers = new HashMap<BigInteger, Component>();
-        peersAddress = new HashMap<BigInteger, PeerAddress>();
-        ringNodes = new ConsistentHashtable<BigInteger>();
+        peers = new HashMap<Long, Component>();
+        peersAddress = new HashMap<Long, Address>();
+        ringNodes = new ConsistentHashtable<Long>();
 
         subscribe(handleInit, control);
         subscribe(handleGenerateReport, timer);
         subscribe(handlePeerJoin, simulator);
         subscribe(handlePeerFail, simulator);
         subscribe(handleAddIndexEntry, simulator);
+        subscribe(handleWebRequest, webIncoming);
     }
 //-------------------------------------------------------------------	
     Handler<SimulatorInit> handleInit = new Handler<SimulatorInit>() {
         public void handle(SimulatorInit init) {
             peers.clear();
-            peerIdSequence = 0;
 
             bootstrapConfiguration = init.getBootstrapConfiguration();
             cyclonConfiguration = init.getCyclonConfiguration();
@@ -108,11 +107,30 @@ public final class SearchSimulator extends ComponentDefinition {
         return sb.toString();
     }
     
+    
+//-------------------------------------------------------------------	
+    Handler<WebRequest> handleWebRequest = new Handler<WebRequest>() {
+        @Override
+        public void handle(WebRequest event) {
+            // Find closest peer and send web request on to it.
+            long peerId = ringNodes.getNode(event.getId());
+            Component peer = peers.get(peerId);
+            trigger(event, peer.getPositive(Web.class));
+        }
+    };
+    
+    Handler<WebResponse> handleWebResponse = new Handler<WebResponse>() {
+        @Override
+        public void handle(WebResponse event) {
+           trigger(event, webIncoming);
+        }
+    };
+    
 //-------------------------------------------------------------------	
     Handler<AddIndexEntry> handleAddIndexEntry = new Handler<AddIndexEntry>() {
         @Override
         public void handle(AddIndexEntry event) {
-            BigInteger successor = ringNodes.getNode(event.getId());
+            Long successor = ringNodes.getNode(event.getId());
             Component peer = peers.get(successor);
             
             trigger(new AddIndexText(randomText()), peer.getNegative(IndexPort.class));
@@ -122,13 +140,13 @@ public final class SearchSimulator extends ComponentDefinition {
     Handler<PeerJoin> handlePeerJoin = new Handler<PeerJoin>() {
         public void handle(PeerJoin event) {
             int num = event.getNum();
-            BigInteger id = event.getPeerId();
+            Long id = event.getPeerId();
 
             // join with the next id if this id is taken
-            BigInteger successor = ringNodes.getNode(id);
+            Long successor = ringNodes.getNode(id);
 
             while (successor != null && successor.equals(id)) {
-                id = id.add(BigInteger.ONE).mod(identifierSpaceSize);
+                id = (id +1) % identifierSpaceSize;
                 successor = ringNodes.getNode(id);
             }
 
@@ -139,7 +157,7 @@ public final class SearchSimulator extends ComponentDefinition {
 //-------------------------------------------------------------------	
     Handler<PeerFail> handlePeerFail = new Handler<PeerFail>() {
         public void handle(PeerFail event) {
-            BigInteger id = ringNodes.getNode(event.getCyclonId());
+            Long id = ringNodes.getNode(event.getId());
 
             if (ringNodes.size() == 0) {
                 System.err.println("Empty network");
@@ -158,27 +176,26 @@ public final class SearchSimulator extends ComponentDefinition {
     };
 
 //-------------------------------------------------------------------	
-    private final void createAndStartNewPeer(BigInteger id, int num) {
+    private final void createAndStartNewPeer(long id, int num) {
         Component peer = create(SearchPeer.class);
-        int peerId = ++peerIdSequence;
         InetAddress ip = ipGenerator.generateIP();
-        Address address = new Address(ip, 8058, peerId);
-        PeerAddress peerAddress = new PeerAddress(address, id);
+        Address address = new Address(ip, 8058, (int) id);
 
         connect(network, peer.getNegative(Network.class), new MessageDestinationFilter(address));
         connect(timer, peer.getNegative(Timer.class));
-        connect(peer.getPositive(Web.class), webIncoming); //, new WebDestinationFilter(peerId));
-
-        trigger(new SearchPeerInit(peerAddress, num, bootstrapConfiguration, cyclonConfiguration, searchConfiguration), peer.getControl());
+//        connect(webIncoming, peer.getPositive(Web.class));
+        subscribe(handleWebResponse, peer.getPositive(Web.class));
+        
+        trigger(new SearchPeerInit(address, num, bootstrapConfiguration, cyclonConfiguration, searchConfiguration), peer.getControl());
 
         trigger(new Start(), peer.getControl());
         peers.put(id, peer);
-        peersAddress.put(id, peerAddress);
+        peersAddress.put(id, address);
 
     }
 
 //-------------------------------------------------------------------	
-    private final void stopAndDestroyPeer(BigInteger id) {
+    private final void stopAndDestroyPeer(Long id) {
         Component peer = peers.get(id);
 
         trigger(new Stop(), peer.getControl());
@@ -186,10 +203,9 @@ public final class SearchSimulator extends ComponentDefinition {
         disconnect(network, peer.getNegative(Network.class));
         disconnect(timer, peer.getNegative(Timer.class));
 
-        Snapshot.removePeer(peersAddress.get(id));
-
         peers.remove(id);
-        peersAddress.remove(id);
+        Address addr = peersAddress.remove(id);
+        Snapshot.removePeer(addr);
 
         destroy(peer);
     }

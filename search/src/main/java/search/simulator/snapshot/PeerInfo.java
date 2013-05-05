@@ -1,16 +1,16 @@
 package search.simulator.snapshot;
 
 import java.util.ArrayList;
+import se.sics.kompics.address.Address;
 
-import common.peer.PeerAddress;
 
 public class PeerInfo {
 	private double num;
-	private ArrayList<PeerAddress> cyclonPartners;
+	private ArrayList<Address> cyclonPartners;
 
 //-------------------------------------------------------------------
 	public PeerInfo() {
-		this.cyclonPartners = new ArrayList<PeerAddress>();
+		this.cyclonPartners = new ArrayList<Address>();
 	}
 
 //-------------------------------------------------------------------
@@ -24,7 +24,7 @@ public class PeerInfo {
 	}
 
 //-------------------------------------------------------------------
-	public void updateCyclonPartners(ArrayList<PeerAddress> partners) {
+	public void updateCyclonPartners(ArrayList<Address> partners) {
 		this.cyclonPartners = partners;
 	}
 
@@ -34,7 +34,7 @@ public class PeerInfo {
 	}
 
 //-------------------------------------------------------------------
-	public ArrayList<PeerAddress> getCyclonPartners() {
+	public ArrayList<Address> getCyclonPartners() {
 		return this.cyclonPartners;
 	}
 }

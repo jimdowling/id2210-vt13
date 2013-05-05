@@ -1,13 +1,13 @@
 package cyclon.simulator.snapshot;
 
 
-import common.peer.PeerAddress;
 import java.util.ArrayList;
+import se.sics.kompics.address.Address;
 
 public class PeerInfo {
 	private int selectedTimes = 0;
 	private int registerdNodes;
-	private ArrayList<PeerAddress> partners;
+	private ArrayList<Address> partners;
 	
 //-------------------------------------------------------------------
 	public PeerInfo() {
@@ -15,7 +15,7 @@ public class PeerInfo {
 	}
 
 //-------------------------------------------------------------------
-	public void updateCyclonPartners(ArrayList<PeerAddress> partners) {
+	public void updateCyclonPartners(ArrayList<Address> partners) {
 		this.partners = partners;
 	}
 
@@ -35,13 +35,13 @@ public class PeerInfo {
 	}
 
 //-------------------------------------------------------------------
-	public ArrayList<PeerAddress> getPartners() {
+	public ArrayList<Address> getPartners() {
 		return this.partners;
 	}
 
 //-------------------------------------------------------------------
-	public boolean isPartner(PeerAddress peer) {
-		for (PeerAddress node : this.partners) {
+	public boolean isPartner(Address peer) {
+		for (Address node : this.partners) {
 			if (node.equals(peer))
 				return true;
 		}

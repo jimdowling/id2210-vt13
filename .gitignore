@@ -7,3 +7,5 @@
 target/*
 /tman/target/
 /search/target/
+/common/target/
+/cyclon/target/

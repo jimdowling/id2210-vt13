@@ -1,20 +1,19 @@
 package common.simulation;
 
-import java.math.BigInteger;
 
 import se.sics.kompics.Event;
 
 public final class PeerFail extends Event {
 
-	private final BigInteger cyclonId;
+	private final Long id;
 
 //-------------------------------------------------------------------	
-	public PeerFail(BigInteger cyclonId) {
-		this.cyclonId = cyclonId;
+	public PeerFail(Long id) {
+		this.id = id;
 	}
 
 //-------------------------------------------------------------------	
-	public BigInteger getCyclonId() {
-		return cyclonId;
+	public Long getId() {
+		return id;
 	}
 }

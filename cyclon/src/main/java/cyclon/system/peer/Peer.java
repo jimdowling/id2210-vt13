@@ -38,7 +38,6 @@ public final class Peer extends ComponentDefinition {
 
 	private Component cyclon, bootstrap;
 	private Address self;
-	private PeerAddress peerSelf;
 	private int bootstrapRequestPeerCount;
 	private boolean bootstrapped;
 
@@ -61,8 +60,7 @@ public final class Peer extends ComponentDefinition {
 //-------------------------------------------------------------------	
 	Handler<PeerInit> handleInit = new Handler<PeerInit>() {
 		public void handle(PeerInit init) {
-			peerSelf = init.getPeerSelf();
-			self = peerSelf.getPeerAddress();
+			self = init.getPeerSelf();
 			CyclonConfiguration cyclonConfiguration = init.getCyclonConfiguration();
 			bootstrapRequestPeerCount = cyclonConfiguration.getBootstrapRequestPeerCount();
 
@@ -77,7 +75,7 @@ public final class Peer extends ComponentDefinition {
 			BootstrapRequest request = new BootstrapRequest("Cyclon", bootstrapRequestPeerCount);
 			trigger(request, bootstrap.getPositive(P2pBootstrap.class));
 			
-			Snapshot.addPeer(peerSelf);
+			Snapshot.addPeer(self);
 		}
 	};
 
@@ -86,12 +84,12 @@ public final class Peer extends ComponentDefinition {
 		public void handle(BootstrapResponse event) {
 			if (!bootstrapped) {
 				Set<PeerEntry> somePeers = event.getPeers();
-				LinkedList<PeerAddress> cyclonInsiders = new LinkedList<PeerAddress>();
+				LinkedList<Address> cyclonInsiders = new LinkedList<Address>();
 				
 				for (PeerEntry peerEntry : somePeers)
-					cyclonInsiders.add((PeerAddress) peerEntry.getOverlayAddress());
+					cyclonInsiders.add(peerEntry.getOverlayAddress().getPeerAddress());
 				
-				trigger(new CyclonJoin(peerSelf, cyclonInsiders), cyclon.getPositive(CyclonPort.class));
+				trigger(new CyclonJoin(self, cyclonInsiders), cyclon.getPositive(CyclonPort.class));
 				bootstrapped = true;
 			}
 		}
@@ -100,7 +98,9 @@ public final class Peer extends ComponentDefinition {
 //-------------------------------------------------------------------	
 	Handler<JoinCompleted> handleJoinCompleted = new Handler<JoinCompleted>() {
 		public void handle(JoinCompleted event) {
-			trigger(new BootstrapCompleted("Cyclon", peerSelf), bootstrap.getPositive(P2pBootstrap.class));
+			trigger(new BootstrapCompleted("Cyclon", 
+                                new PeerAddress(event.getLocalPeer())), 
+                                bootstrap.getPositive(P2pBootstrap.class));
 		}
 	};
 }

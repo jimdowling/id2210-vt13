@@ -1,17 +1,17 @@
 package search.system.peer.search;
 
 import common.configuration.SearchConfiguration;
-import common.peer.PeerAddress;
 import se.sics.kompics.Init;
+import se.sics.kompics.address.Address;
 
 public final class SearchInit extends Init {
 
-	private final PeerAddress peerSelf;
+	private final Address peerSelf;
 	private final int num;
 	private final SearchConfiguration configuration;
 
 //-------------------------------------------------------------------
-	public SearchInit(PeerAddress peerSelf, int num, SearchConfiguration configuration) {
+	public SearchInit(Address peerSelf, int num, SearchConfiguration configuration) {
 		super();
 		this.peerSelf = peerSelf;
 		this.num = num;
@@ -19,7 +19,7 @@ public final class SearchInit extends Init {
 	}
 
 //-------------------------------------------------------------------
-	public PeerAddress getSelf() {
+	public Address getSelf() {
 		return this.peerSelf;
 	}
 

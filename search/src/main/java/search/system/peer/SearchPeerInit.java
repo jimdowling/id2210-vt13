@@ -1,21 +1,21 @@
 package search.system.peer;
 
-import common.peer.PeerAddress;
 import common.configuration.SearchConfiguration;
 import common.configuration.CyclonConfiguration;
 import se.sics.kompics.Init;
+import se.sics.kompics.address.Address;
 import se.sics.kompics.p2p.bootstrap.BootstrapConfiguration;
 
 public final class SearchPeerInit extends Init {
 
-	private final PeerAddress peerSelf;
+	private final Address peerSelf;
 	private final int num;
 	private final BootstrapConfiguration bootstrapConfiguration;
 	private final CyclonConfiguration cyclonConfiguration;
 	private final SearchConfiguration applicationConfiguration;
 
 //-------------------------------------------------------------------	
-	public SearchPeerInit(PeerAddress peerSelf, int num, BootstrapConfiguration bootstrapConfiguration, CyclonConfiguration cyclonConfiguration, SearchConfiguration applicationConfiguration) {
+	public SearchPeerInit(Address peerSelf, int num, BootstrapConfiguration bootstrapConfiguration, CyclonConfiguration cyclonConfiguration, SearchConfiguration applicationConfiguration) {
 		super();
 		this.peerSelf = peerSelf;
 		this.num = num;
@@ -25,7 +25,7 @@ public final class SearchPeerInit extends Init {
 	}
 
 //-------------------------------------------------------------------	
-	public PeerAddress getPeerSelf() {
+	public Address getPeerSelf() {
 		return this.peerSelf;
 	}
 

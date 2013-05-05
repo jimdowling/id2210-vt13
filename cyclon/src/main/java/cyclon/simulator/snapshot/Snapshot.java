@@ -1,14 +1,14 @@
 package cyclon.simulator.snapshot;
 
 
-import common.peer.PeerAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import se.sics.kompics.address.Address;
 
 public class Snapshot {
-	private static HashMap<PeerAddress, PeerInfo> peers = new HashMap<PeerAddress, PeerInfo>();
-	private static HashMap<PeerAddress, Integer> fanout = new HashMap<PeerAddress, Integer>();
-	private static HashMap<PeerAddress, Integer> fanin = new HashMap<PeerAddress, Integer>();
+	private static HashMap<Address, PeerInfo> peers = new HashMap<Address, PeerInfo>();
+	private static HashMap<Address, Integer> fanout = new HashMap<Address, Integer>();
+	private static HashMap<Address, Integer> fanin = new HashMap<Address, Integer>();
 	private static int counter = 0;
 	private static String FILENAME = "cyclon.out";
 	private static GraphUtil g = new GraphUtil();
@@ -19,21 +19,21 @@ public class Snapshot {
 	}
 
 //-------------------------------------------------------------------
-	public static void addPeer(PeerAddress address) {
+	public static void addPeer(Address address) {
 		peers.put(address, new PeerInfo());
 		fanin.put(address, 0);
 		fanout.put(address, 0);
 	}
 
 //-------------------------------------------------------------------
-	public static void removePeer(PeerAddress address) {
+	public static void removePeer(Address address) {
 		peers.remove(address);
 		fanin.remove(address);
 		fanout.remove(address);
 	}
 
 //-------------------------------------------------------------------
-	public static void incSelectedTimes(PeerAddress address) {
+	public static void incSelectedTimes(Address address) {
 		PeerInfo peerInfo = peers.get(address);
 		
 		if (peerInfo == null)
@@ -43,7 +43,7 @@ public class Snapshot {
 	}
 	
 //-------------------------------------------------------------------
-	public static void updateCyclonPartners(PeerAddress address, ArrayList<PeerAddress> partners) {
+	public static void updateCyclonPartners(Address address, ArrayList<Address> partners) {
 		PeerInfo peerInfo = peers.get(address);
 		
 		if (peerInfo == null)
@@ -126,7 +126,7 @@ public class Snapshot {
 		String str = new String("---\n");
 
 		int count;
-		for (PeerAddress node : fanin.keySet()) {
+		for (Address node : fanin.keySet()) {
 			count = 0;
 			for (PeerInfo peerInfo : peers.values()) {
 				if (peerInfo.getPartners() != null && peerInfo.isPartner(node))
@@ -156,7 +156,7 @@ public class Snapshot {
 		PeerInfo peerInfo;
 		String str = new String("---\n");
 
-		for (PeerAddress peer : peers.keySet()) {
+		for (Address peer : peers.keySet()) {
 			peerInfo = peers.get(peer);		
 			str += "peer: " + peer + ", prtners: " + peerInfo.getPartners() + "\n";
 		}

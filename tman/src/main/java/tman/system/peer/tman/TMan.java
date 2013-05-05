@@ -6,11 +6,13 @@ import java.util.ArrayList;
 
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
+import java.util.List;
 
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
+import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.ScheduleTimeout;
@@ -21,7 +23,7 @@ import tman.simulator.snapshot.Snapshot;
 
 public final class TMan extends ComponentDefinition {
 
-    Negative<TManSamplePort> tmanPartnersPort = negative(TManSamplePort.class);
+    Negative<TManSamplePort> tmanPort = negative(TManSamplePort.class);
     Positive<CyclonSamplePort> cyclonSamplePort = positive(CyclonSamplePort.class);
     Positive<Network> networkPort = positive(Network.class);
     Positive<Timer> timerPort = positive(Timer.class);
@@ -73,14 +75,14 @@ public final class TMan extends ComponentDefinition {
             Snapshot.updateTManPartners(self, tmanPartners);
 
             // Publish sample to connected components
-            trigger(new TManSample(tmanPartners), tmanPartnersPort);            
+            trigger(new TManSample(tmanPartners), tmanPort);            
         }
     };
 //-------------------------------------------------------------------	
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
         public void handle(CyclonSample event) {
-            ArrayList<PeerAddress> cyclonPartners = event.getSample();
+            List<Address> cyclonPartners = event.getSample();
 
             // merge cyclonPartners into TManPartners
         }

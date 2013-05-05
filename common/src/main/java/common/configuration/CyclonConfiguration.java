@@ -5,7 +5,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-import java.math.BigInteger;
 import java.util.Properties;
 
 public final class CyclonConfiguration {
@@ -36,7 +35,7 @@ public final class CyclonConfiguration {
 	 * used by the simulator as the range of identifiers assigned to Cyclon
 	 * nodes.
 	 */
-	private final BigInteger identifierSpaceSize;
+	private final Long identifierSpaceSize;
 
 	/**
 	 * the number of peers that should be requested from the bootstrap service
@@ -47,7 +46,7 @@ public final class CyclonConfiguration {
 //-------------------------------------------------------------------
 	public CyclonConfiguration(int shuffleLength, int randomViewSize, 
 			long shufflePeriod, long shuffleTimeout,
-			BigInteger identifierSpaceSize, int bootstrapRequestPeerCount) {
+			Long identifierSpaceSize, int bootstrapRequestPeerCount) {
 		super();
 		this.shuffleLength = shuffleLength;
 		this.randomViewSize = randomViewSize;
@@ -78,7 +77,7 @@ public final class CyclonConfiguration {
 	}
 
 //-------------------------------------------------------------------
-	public BigInteger getIdentifierSpaceSize() {
+	public Long getIdentifierSpaceSize() {
 		return identifierSpaceSize;
 	}
 
@@ -111,7 +110,7 @@ public final class CyclonConfiguration {
 		int randomViewSize = Integer.parseInt(p.getProperty("random.view.size"));
 		long shufflePeriod = Long.parseLong(p.getProperty("shuffle.period"));
 		long shuffleTimeout = Long.parseLong(p.getProperty("shuffle.timeout"));
-		BigInteger identifierSpaceSize = new BigInteger(p.getProperty("id.space.size"));
+		Long identifierSpaceSize = Long.parseLong(p.getProperty("id.space.size"));
 		int bootstrapRequestPeerCount = Integer.parseInt(p.getProperty("bootstrap.request.peer.count"));
 
 		return new CyclonConfiguration(shuffleLength, randomViewSize, shufflePeriod, shuffleTimeout, identifierSpaceSize, bootstrapRequestPeerCount);

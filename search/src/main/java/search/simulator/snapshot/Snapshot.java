@@ -2,11 +2,11 @@ package search.simulator.snapshot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import se.sics.kompics.address.Address;
 
-import common.peer.PeerAddress;
 
 public class Snapshot {
-	private static HashMap<PeerAddress, PeerInfo> peers = new HashMap<PeerAddress, PeerInfo>();
+	private static HashMap<Address, PeerInfo> peers = new HashMap<Address, PeerInfo>();
 	private static int counter = 0;
 	private static String FILENAME = "search.out";
 
@@ -16,17 +16,17 @@ public class Snapshot {
 	}
 
 //-------------------------------------------------------------------
-	public static void addPeer(PeerAddress address) {
+	public static void addPeer(Address address) {
 		peers.put(address, new PeerInfo());
 	}
 
 //-------------------------------------------------------------------
-	public static void removePeer(PeerAddress address) {
+	public static void removePeer(Address address) {
 		peers.remove(address);
 	}
 
 //-------------------------------------------------------------------
-	public static void updateNum(PeerAddress address, double num) {
+	public static void updateNum(Address address, double num) {
 		PeerInfo peerInfo = peers.get(address);
 		
 		if (peerInfo == null)
@@ -36,7 +36,7 @@ public class Snapshot {
 	}
 	
 //-------------------------------------------------------------------
-	public static void updateCyclonPartners(PeerAddress address, ArrayList<PeerAddress> partners) {
+	public static void updateCyclonPartners(Address address, ArrayList<Address> partners) {
 		PeerInfo peerInfo = peers.get(address);
 		
 		if (peerInfo == null)

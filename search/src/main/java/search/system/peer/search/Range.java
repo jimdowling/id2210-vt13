@@ -1,25 +1,24 @@
 package search.system.peer.search;
 
+import java.io.Serializable;
+
 /**
- * Created with IntelliJ IDEA.
- * User: kazarindn
- * Date: 4/22/13
- * Time: 4:15 PM
+ * @jim
  */
-public class Range {
-    private int left;
-    private int right;
-
-    public int getLeft() {
-        return left;
+public class Range implements Serializable {
+    private final int lower;
+    private final int upper;
+    
+    public Range(int lower, int upper) {
+        this.lower = lower;
+        this.upper = upper;
     }
 
-    public int getRight() {
-        return right;
+    public int getLower() {
+        return lower;
     }
 
-    public Range(int left, int right) {
-        this.left = left;
-        this.right = right;
+    public int getUpper() {
+        return upper;
     }
 }

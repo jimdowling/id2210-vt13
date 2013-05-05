@@ -2,16 +2,16 @@ package cyclon.system.peer.cyclon;
 
 import java.util.UUID;
 
-import common.peer.PeerMessage;
-import common.peer.PeerAddress;
+import se.sics.kompics.address.Address;
+import se.sics.kompics.network.Message;
 
-public class ShuffleRequest extends PeerMessage {
+public class ShuffleRequest extends Message {
 	private static final long serialVersionUID = 8493601671018888143L;
 	private final UUID requestId;
 	private final DescriptorBuffer randomBuffer;
 
 //-------------------------------------------------------------------
-	public ShuffleRequest(UUID requestId, DescriptorBuffer randomBuffer, PeerAddress source, PeerAddress destination) {
+	public ShuffleRequest(UUID requestId, DescriptorBuffer randomBuffer, Address source, Address destination) {
 		super(source, destination);
 		this.requestId = requestId;
 		this.randomBuffer = randomBuffer;

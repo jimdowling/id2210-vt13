@@ -1,19 +1,19 @@
 package cyclon.system.peer;
 
 import common.configuration.CyclonConfiguration;
-import common.peer.PeerAddress;
 import se.sics.kompics.Init;
+import se.sics.kompics.address.Address;
 import se.sics.kompics.p2p.bootstrap.BootstrapConfiguration;
 
 public final class PeerInit extends Init {
 
-	private final PeerAddress peerSelf;
+	private final Address peerSelf;
 	private final int num;
 	private final BootstrapConfiguration bootstrapConfiguration;
 	private final CyclonConfiguration cyclonConfiguration;
 
 //-------------------------------------------------------------------	
-	public PeerInit(PeerAddress peerSelf, int num, BootstrapConfiguration bootstrapConfiguration, CyclonConfiguration cyclonConfiguration) {
+	public PeerInit(Address peerSelf, int num, BootstrapConfiguration bootstrapConfiguration, CyclonConfiguration cyclonConfiguration) {
 		super();
 		this.peerSelf = peerSelf;
 		this.num = num;
@@ -22,7 +22,7 @@ public final class PeerInit extends Init {
 	}
 
 //-------------------------------------------------------------------	
-	public PeerAddress getPeerSelf() {
+	public Address getPeerSelf() {
 		return this.peerSelf;
 	}
 

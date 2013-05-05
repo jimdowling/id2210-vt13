@@ -20,11 +20,11 @@ import se.sics.kompics.p2p.bootstrap.client.BootstrapClientInit;
 import se.sics.kompics.timer.Timer;
 
 import search.simulator.snapshot.Snapshot;
-import common.peer.PeerAddress;
 import search.system.peer.search.Search;
 import search.system.peer.search.SearchInit;
 import common.configuration.SearchConfiguration;
 import common.configuration.CyclonConfiguration;
+import common.peer.PeerAddress;
 import cyclon.system.peer.cyclon.*;
 import se.sics.kompics.web.Web;
 import tman.system.peer.tman.TMan;
@@ -42,7 +42,6 @@ public final class SearchPeer extends ComponentDefinition {
         private Component cyclon, tman, search, bootstrap;
 	private int num;
 	private Address self;
-	private PeerAddress peerSelf;
 	private int bootstrapRequestPeerCount;
 	private boolean bootstrapped;
 	private SearchConfiguration aggregationConfiguration;
@@ -82,8 +81,7 @@ public final class SearchPeer extends ComponentDefinition {
 	Handler<SearchPeerInit> handleInit = new Handler<SearchPeerInit>() {
 		public void handle(SearchPeerInit init) {
 			num = init.getNum();
-			peerSelf = init.getPeerSelf();
-			self = peerSelf.getPeerAddress();
+			self = init.getPeerSelf();
 			CyclonConfiguration cyclonConfiguration = init.getCyclonConfiguration();
 			aggregationConfiguration = init.getApplicationConfiguration();
 			
@@ -93,7 +91,7 @@ public final class SearchPeer extends ComponentDefinition {
 			trigger(new BootstrapClientInit(self, init.getBootstrapConfiguration()), bootstrap.getControl());
 			BootstrapRequest request = new BootstrapRequest("Cyclon", bootstrapRequestPeerCount);
 			trigger(request, bootstrap.getPositive(P2pBootstrap.class));
-			Snapshot.addPeer(peerSelf);
+			Snapshot.addPeer(self);
 		}
 	};
 
@@ -103,12 +101,14 @@ public final class SearchPeer extends ComponentDefinition {
 		public void handle(BootstrapResponse event) {
 			if (!bootstrapped) {
 				Set<PeerEntry> somePeers = event.getPeers();
-				LinkedList<PeerAddress> cyclonInsiders = new LinkedList<PeerAddress>();
+				LinkedList<Address> cyclonInsiders = new LinkedList<Address>();
 				
-				for (PeerEntry peerEntry : somePeers)
-					cyclonInsiders.add((PeerAddress) peerEntry.getOverlayAddress());
-				
-				trigger(new CyclonJoin(peerSelf, cyclonInsiders), cyclon.getPositive(CyclonPort.class));
+				for (PeerEntry peerEntry : somePeers) {
+					cyclonInsiders.add(
+                                                peerEntry.getOverlayAddress().getPeerAddress());
+                                }
+				trigger(new CyclonJoin(self, cyclonInsiders), 
+                                        cyclon.getPositive(CyclonPort.class));
 				bootstrapped = true;
 			}
 		}
@@ -117,8 +117,9 @@ public final class SearchPeer extends ComponentDefinition {
 //-------------------------------------------------------------------	
 	Handler<JoinCompleted> handleJoinCompleted = new Handler<JoinCompleted>() {
 		public void handle(JoinCompleted event) {
-			trigger(new BootstrapCompleted("Cyclon", peerSelf), bootstrap.getPositive(P2pBootstrap.class));
-			trigger(new SearchInit(peerSelf, num, aggregationConfiguration), search.getControl());
+			trigger(new BootstrapCompleted("Cylon", new PeerAddress(self)), 
+                                bootstrap.getPositive(P2pBootstrap.class));
+			trigger(new SearchInit(self, num, aggregationConfiguration), search.getControl());
 		}
 	};
 }

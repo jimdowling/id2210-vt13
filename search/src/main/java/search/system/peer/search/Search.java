@@ -2,19 +2,22 @@ package search.system.peer.search;
 
 import search.simulator.snapshot.Snapshot;
 import common.configuration.SearchConfiguration;
-import common.peer.PeerAddress;
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
+import cyclon.system.peer.cyclon.PeerDescriptor;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -23,6 +26,7 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
@@ -36,6 +40,7 @@ import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
+import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.Timer;
@@ -49,6 +54,7 @@ import tman.system.peer.tman.TManSamplePort;
 
 /**
  * Should have some comments here.
+ *
  * @author jdowling
  */
 public final class Search extends ComponentDefinition {
@@ -59,61 +65,66 @@ public final class Search extends ComponentDefinition {
     Positive<Timer> timerPort = positive(Timer.class);
     Negative<Web> webPort = negative(Web.class);
     Positive<CyclonSamplePort> cyclonSamplePort = positive(CyclonSamplePort.class);
-    Positive<TManSamplePort> tmanSamplePort = positive(TManSamplePort.class);
-
-    ArrayList<PeerAddress> neighbours = new ArrayList<PeerAddress>();
-    Random randomGenerator = new Random();
-    ArrayList<Integer> indexStore = new ArrayList<Integer>();
-    private PeerAddress self;
-    private long period;
+    Positive<TManSamplePort> tmanPort = positive(TManSamplePort.class);
+    
+    ArrayList<Address> neighbours = new ArrayList<Address>();
+    private Address self;
     private double num;
     private SearchConfiguration searchConfiguration;
     // Apache Lucene used for searching
     StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_42);
     Directory index = new RAMDirectory();
     IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_42, analyzer);
+    int lastMissingIndexEntry = 0;
+    int maxIndexEntry = 0;
+    Random random;
+    // When you partition the index you need to find new nodes
+    // This is a routing table maintaining a list of pairs in each partition.
+    private Map<Integer, List<PeerDescriptor>> routingTable;
+    Comparator<PeerDescriptor> peerAgeComparator = new Comparator<PeerDescriptor>() {
+        @Override
+        public int compare(PeerDescriptor t, PeerDescriptor t1) {
+            if (t.getAge() > t1.getAge()) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }
+    };
 
-    private int latestMissingIndexValue =0;
-    
 //-------------------------------------------------------------------	
     public Search() {
 
         subscribe(handleInit, control);
         subscribe(handleWebRequest, webPort);
         subscribe(handleCyclonSample, cyclonSamplePort);
-        subscribe(handleTManSample, tmanSamplePort);
         subscribe(handleAddIndexText, indexPort);
+        subscribe(handleUpdateIndexTimeout, timerPort);
+        subscribe(handleMissingIndexEntriesRequest, networkPort);
+        subscribe(handleMissingIndexEntriesResponse, networkPort);
+        subscribe(handleTManSample, tmanPort);
     }
 //-------------------------------------------------------------------	
     Handler<SearchInit> handleInit = new Handler<SearchInit>() {
+        @Override
         public void handle(SearchInit init) {
             self = init.getSelf();
             num = init.getNum();
             searchConfiguration = init.getConfiguration();
-            period = searchConfiguration.getPeriod();
-
+            routingTable = new HashMap<Integer, List<PeerDescriptor>>(searchConfiguration.getNumPartitions());
+            random = new Random(init.getConfiguration().getSeed());
+            long period = searchConfiguration.getPeriod();
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
             rst.setTimeoutEvent(new UpdateIndexTimeout(rst));
             trigger(rst, timerPort);
 
             Snapshot.updateNum(self, num);
-            try {
-                String title = "The Art of Computer Science";
-                String id = "100";
-                addEntry(title,id);
-            } catch (IOException ex) {
-                java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
-                System.exit(-1);
-            }
         }
     };
-
-
+    
     Handler<WebRequest> handleWebRequest = new Handler<WebRequest>() {
+        @Override
         public void handle(WebRequest event) {
-            if (event.getDestination() != self.getPeerAddress().getId()) {
-                return;
-            }
 
             String[] args = event.getTarget().split("-");
 
@@ -122,7 +133,7 @@ public final class Search extends ComponentDefinition {
             if (args[0].compareToIgnoreCase("search") == 0) {
                 response = new WebResponse(searchPageHtml(args[1]), event, 1, 1);
             } else if (args[0].compareToIgnoreCase("add") == 0) {
-                response = new WebResponse(addEntryHtml(args[1], args[2]), event, 1, 1);
+                response = new WebResponse(addEntryHtml(args[1], Integer.parseInt(args[2])), event, 1, 1);
             } else {
                 response = new WebResponse(searchPageHtml(event
                         .getTarget()), event, 1, 1);
@@ -155,7 +166,7 @@ public final class Search extends ComponentDefinition {
         return sb.toString();
     }
 
-    private String addEntryHtml(String title, String id) {
+    private String addEntryHtml(String title, int id) {
         StringBuilder sb = new StringBuilder("<!DOCTYPE html PUBLIC \"-//W3C");
         sb.append("//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR");
         sb.append("/xhtml1/DTD/xhtml1-transitional.dtd\"><html xmlns=\"http:");
@@ -177,26 +188,16 @@ public final class Search extends ComponentDefinition {
         return sb.toString();
     }
 
-    private void addEntry(String title, String id) throws IOException {
+    private void addEntry(String title, int id) throws IOException {
         IndexWriter w = new IndexWriter(index, config);
         Document doc = new Document();
         doc.add(new TextField("title", title, Field.Store.YES));
-        // You may need to make the StringField searchable by NumericRangeQuery. See:
-        // http://stackoverflow.com/questions/13958431/lucene-4-0-indexwriter-updatedocument-for-numeric-term
+        // Use a NumericRangeQuery to find missing index entries:
+//    http://lucene.apache.org/core/4_2_0/core/org/apache/lucene/search/NumericRangeQuery.html
         // http://lucene.apache.org/core/4_2_0/core/org/apache/lucene/document/IntField.html
-        doc.add(new StringField("id", id, Field.Store.YES));
+        doc.add(new IntField("id", id, Field.Store.YES));
         w.addDocument(doc);
         w.close();
-
-
-        int idVal = Integer.parseInt(id);
-        indexStore.add(idVal);
-        Collections.sort(indexStore);
-
-
-        if (idVal == latestMissingIndexValue + 1) {
-            latestMissingIndexValue++;
-        }
     }
 
     private String query(StringBuilder sb, String querystr) throws ParseException, IOException {
@@ -215,7 +216,6 @@ public final class Search extends ComponentDefinition {
 
         int hitsPerPage = 10;
         TopScoreDocCollector collector = TopScoreDocCollector.create(hitsPerPage, true);
-
         searcher.search(q, collector);
         ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
@@ -233,33 +233,233 @@ public final class Search extends ComponentDefinition {
         reader.close();
         return sb.toString();
     }
-    
+    Handler<UpdateIndexTimeout> handleUpdateIndexTimeout = new Handler<UpdateIndexTimeout>() {
+        @Override
+        public void handle(UpdateIndexTimeout event) {
+
+            // pick a random neighbour to ask for index updates from. 
+            // You can change this policy if you want to.
+            // Maybe a gradient neighbour who is closer to the leader?
+            if (neighbours.isEmpty()) {
+                return;
+            }
+            Address dest = neighbours.get(random.nextInt(neighbours.size()));
+
+            // find all missing index entries (ranges) between lastMissingIndexValue
+            // and the maxIndexValue
+            List<Range> missingIndexEntries = getMissingRanges();
+
+            // Send a MissingIndexEntries.Request for the missing index entries to dest
+            MissingIndexEntries.Request req = new MissingIndexEntries.Request(self, dest,
+                    missingIndexEntries);
+            trigger(req, networkPort);
+        }
+    };
+
+    ScoreDoc[] getExistingDocsInRange(int min, int max, IndexReader reader,
+            IndexSearcher searcher) throws IOException {
+        NumericRangeQuery<Integer> entriesBetweenMissingAndMax =
+                NumericRangeQuery.newIntRange("id", 1,
+                min, max, true, true);
+        reader = DirectoryReader.open(index);
+        searcher = new IndexSearcher(reader);
+        // The line below is dangerous - we should bound the number of entries returned
+        // so that it doesn't consume too much memory.
+        int hitsPerPage = max - min;
+        TopScoreDocCollector collector = TopScoreDocCollector.create(hitsPerPage, true);
+        searcher.search(entriesBetweenMissingAndMax, collector);
+        return collector.topDocs().scoreDocs;
+    }
+
+    List<Range> getMissingRanges() {
+        List<Range> res = new ArrayList<Range>();
+        IndexSearcher searcher = null;
+        IndexReader reader = null;
+        try {
+            ScoreDoc[] hits = getExistingDocsInRange(lastMissingIndexEntry, maxIndexEntry,
+                    reader, searcher);
+
+            if (hits != null) {
+                int startRange = lastMissingIndexEntry;
+                // This should terminate by finding the last entry at position maxIndexValue
+                for (int id = lastMissingIndexEntry + 1; id <= maxIndexEntry; id++) {
+                    // We can skip the for-loop if the hits are returned in order, with lowest id first
+                    boolean found = false;
+                    for (int i = 0; i < hits.length; ++i) {
+                        int docId = hits[i].doc;
+                        Document d;
+                        try {
+                            d = searcher.doc(docId);
+                            int indexId = Integer.parseInt(d.get("id"));
+                            if (id == indexId) {
+                                found = true;
+                            }
+                        } catch (IOException ex) {
+                            java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                    if (found) {
+                        if (id != startRange) {
+                            res.add(new Range(startRange, id - 1));
+                        }
+                        startRange = (id == Integer.MAX_VALUE) ? Integer.MAX_VALUE : id + 1;
+                    }
+                }
+                // Add all entries > maxIndexEntry as a range of interest.
+                res.add(new Range(maxIndexEntry+1, Integer.MAX_VALUE));
+                
+            }
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException ex) {
+                    java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
+        }
+
+
+        return res;
+    }
+
+    List<IndexEntry> getMissingIndexEntries(Range range) {
+        List<IndexEntry> res = new ArrayList<IndexEntry>();
+        IndexSearcher searcher = null;
+        IndexReader reader = null;
+        try {
+            ScoreDoc[] hits = getExistingDocsInRange(range.getLower(),
+                    range.getUpper(), reader, searcher);
+            if (hits != null) {
+                for (int i = 0; i < hits.length; ++i) {
+                    int docId = hits[i].doc;
+                    Document d;
+                    try {
+                        d = searcher.doc(docId);
+                        int indexId = Integer.parseInt(d.get("id"));
+                        String text = d.get("text");
+                        res.add(new IndexEntry(indexId, text));
+                    } catch (IOException ex) {
+                        java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException ex) {
+                    java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
+        }
+
+        return res;
+    }
+
+    /**
+     * Called by null     {@link #handleMissingIndexEntriesRequest(MissingIndexEntries.Request) 
+     * handleMissingIndexEntriesRequest}
+     *
+     * @return List of IndexEntries at this node great than max
+     */
+    List<IndexEntry> getEntriesGreaterThan(int max) {
+        List<IndexEntry> res = new ArrayList<IndexEntry>();
+
+        IndexSearcher searcher = null;
+        IndexReader reader = null;
+        try {
+            ScoreDoc[] hits = getExistingDocsInRange(max, maxIndexEntry,
+                    reader, searcher);
+
+            if (hits != null) {
+                for (int i = 0; i < hits.length; ++i) {
+                    int docId = hits[i].doc;
+                    Document d;
+                    try {
+                        d = searcher.doc(docId);
+                        int indexId = Integer.parseInt(d.get("id"));
+                        String text = d.get("text");
+                        res.add(new IndexEntry(indexId, text));
+                    } catch (IOException ex) {
+                        java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException ex) {
+                    java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
+        }
+        return res;
+    }
+
+    Handler<MissingIndexEntries.Request> handleMissingIndexEntriesRequest = new Handler<MissingIndexEntries.Request>() {
+        @Override
+        public void handle(MissingIndexEntries.Request event) {
+
+            List<IndexEntry> res = new ArrayList<IndexEntry>();
+            for (Range r : event.getMissingRanges()) {
+                res.addAll(getMissingIndexEntries(r));
+            }
+            
+            // TODO send missing index entries back to requester
+        }
+    };
+    Handler<MissingIndexEntries.Response> handleMissingIndexEntriesResponse = new Handler<MissingIndexEntries.Response>() {
+        @Override
+        public void handle(MissingIndexEntries.Response event) {
+            // TODO merge the missing index entries in your lucene index 
+        }
+    };
+
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
         public void handle(CyclonSample event) {
             // receive a new list of neighbours
-            neighbours = event.getSample();
-            // Pick a node or more, and exchange index with them
+            neighbours.clear();
+            neighbours.addAll(event.getSample());
+
+            // update routing tables
+            for (Address p : neighbours) {
+                int partition = p.getId() % searchConfiguration.getNumPartitions();
+                List<PeerDescriptor> nodes = routingTable.get(partition);
+                if (nodes == null) {
+                    nodes = new ArrayList<PeerDescriptor>();
+                }
+                // Note - this might replace an existing entry in Lucene
+                nodes.add(new PeerDescriptor(p));
+                // keep the freshest descriptors in this partition
+                Collections.sort(nodes, peerAgeComparator);
+                List<PeerDescriptor> nodesToRemove = new ArrayList<PeerDescriptor>();
+                for (int i = nodes.size(); i > searchConfiguration.getMaxNumRoutingEntries(); i--) {
+                    nodesToRemove.add(nodes.get(i - 1));
+                }
+                nodes.removeAll(nodesToRemove);
+            }
         }
     };
-    
-    Handler<TManSample> handleTManSample = new Handler<TManSample>() {
-        @Override
-        public void handle(TManSample event) {
-            // receive a new list of neighbours
-            ArrayList<PeerAddress> sampleNodes = event.getSample();
-            // Pick a node or more, and exchange index with them
-        }
-    };
-    
 //-------------------------------------------------------------------	
     Handler<AddIndexText> handleAddIndexText = new Handler<AddIndexText>() {
         @Override
         public void handle(AddIndexText event) {
-            Random r = new Random(System.currentTimeMillis());
-            String id = Integer.toString(r.nextInt(100000));
-            logger.info(self.getPeerAddress().getId() 
-                    + " - adding index entry: {}-{}", event.getText(), id);
+            int id = LeaderEmulator.incIndexId();
+            updateIndexPointers(id);
+            logger.info(self.getId()
+                    + " - adding index entry: {} Id={}", event.getText(), id);
             try {
                 addEntry(event.getText(), id);
             } catch (IOException ex) {
@@ -268,5 +468,20 @@ public final class Search extends ComponentDefinition {
             }
         }
     };
+
+    Handler<TManSample> handleTManSample = new Handler<TManSample>() {
+        @Override
+        public void handle(TManSample event) {
+
+        }
+    };
     
+    private void updateIndexPointers(int id) {
+        if (id == lastMissingIndexEntry + 1) {
+            lastMissingIndexEntry++;
+        }
+        if (id > maxIndexEntry) {
+            maxIndexEntry = id;
+        }
+    }
 }

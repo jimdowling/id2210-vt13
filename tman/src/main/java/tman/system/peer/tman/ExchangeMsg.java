@@ -2,7 +2,6 @@ package tman.system.peer.tman;
 
 import java.util.UUID;
 
-import common.peer.PeerAddress;
 import cyclon.system.peer.cyclon.DescriptorBuffer;
 import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Message;
@@ -72,16 +71,16 @@ public class ExchangeMsg {
 
     public static class RequestTimeout extends Timeout {
 
-        private final PeerAddress peer;
+        private final Address peer;
 
 //-------------------------------------------------------------------
-        public RequestTimeout(ScheduleTimeout request, PeerAddress peer) {
+        public RequestTimeout(ScheduleTimeout request, Address peer) {
             super(request);
             this.peer = peer;
         }
 
 //-------------------------------------------------------------------
-        public PeerAddress getPeer() {
+        public Address getPeer() {
             return peer;
         }
     }

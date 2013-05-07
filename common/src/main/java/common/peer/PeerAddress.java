@@ -4,6 +4,11 @@ package common.peer;
 import se.sics.kompics.address.Address;
 import se.sics.kompics.p2p.overlay.OverlayAddress;
 
+/**
+ * This class is needed by the BootstrapServer that expects an instance of
+ * an OverlayAddress.
+ * @author jdowling
+ */
 public final class PeerAddress extends OverlayAddress implements Comparable<PeerAddress> {
 	private static final long serialVersionUID = -7582889514221620065L;
 

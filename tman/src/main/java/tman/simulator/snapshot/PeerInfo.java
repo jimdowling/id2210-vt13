@@ -1,36 +1,36 @@
 package tman.simulator.snapshot;
 
-import common.peer.PeerAddress;
 import java.util.ArrayList;
+import se.sics.kompics.address.Address;
 
 
 public class PeerInfo {
-	private ArrayList<PeerAddress> tmanPartners;
-	private ArrayList<PeerAddress> cyclonPartners;
+	private ArrayList<Address> tmanPartners;
+	private ArrayList<Address> cyclonPartners;
 
 //-------------------------------------------------------------------
 	public PeerInfo() {
-		this.tmanPartners = new ArrayList<PeerAddress>();
-		this.cyclonPartners = new ArrayList<PeerAddress>();
+		this.tmanPartners = new ArrayList<Address>();
+		this.cyclonPartners = new ArrayList<Address>();
 	}
 
 //-------------------------------------------------------------------
-	public void updateTManPartners(ArrayList<PeerAddress> partners) {
+	public void updateTManPartners(ArrayList<Address> partners) {
 		this.tmanPartners = partners;
 	}
 
 //-------------------------------------------------------------------
-	public void updateCyclonPartners(ArrayList<PeerAddress> partners) {
+	public void updateCyclonPartners(ArrayList<Address> partners) {
 		this.cyclonPartners = partners;
 	}
 
 //-------------------------------------------------------------------
-	public ArrayList<PeerAddress> getTManPartners() {
+	public ArrayList<Address> getTManPartners() {
 		return this.tmanPartners;
 	}
 
 //-------------------------------------------------------------------
-	public ArrayList<PeerAddress> getCyclonPartners() {
+	public ArrayList<Address> getCyclonPartners() {
 		return this.cyclonPartners;
 	}
 }

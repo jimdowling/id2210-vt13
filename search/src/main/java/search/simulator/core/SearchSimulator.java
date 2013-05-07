@@ -113,7 +113,7 @@ public final class SearchSimulator extends ComponentDefinition {
         @Override
         public void handle(WebRequest event) {
             // Find closest peer and send web request on to it.
-            long peerId = ringNodes.getNode(event.getId());
+            long peerId = ringNodes.getNode((long) event.getDestination());
             Component peer = peers.get(peerId);
             trigger(event, peer.getPositive(Web.class));
         }

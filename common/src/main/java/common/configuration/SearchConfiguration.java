@@ -1,5 +1,6 @@
 package common.configuration;
 
+import common.simulation.scenarios.Scenario;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -14,11 +15,11 @@ public final class SearchConfiguration {
     private final int maxNumRoutingEntries;
     private final long seed;
 
-    public SearchConfiguration() {
+    public SearchConfiguration(long seed) {
         this.period = 2*1000;
         this.numPartitions = 10;
         this.maxNumRoutingEntries = 20;
-        this.seed = System.currentTimeMillis();
+        this.seed = seed;
     }
     
     public SearchConfiguration(long period, int numPartitions, int maxNumRoutingEntries, long seed) {

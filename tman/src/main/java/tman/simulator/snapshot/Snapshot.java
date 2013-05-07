@@ -1,12 +1,12 @@
 package tman.simulator.snapshot;
 
-import common.peer.PeerAddress;
 import java.util.ArrayList;
 import java.util.TreeMap;
+import se.sics.kompics.address.Address;
 
 
 public class Snapshot {
-	private static TreeMap<PeerAddress, PeerInfo> peers = new TreeMap<PeerAddress, PeerInfo>();
+	private static TreeMap<Address, PeerInfo> peers = new TreeMap<Address, PeerInfo>();
 	private static int counter = 0;
 	private static String FILENAME = "tman.out";
 
@@ -16,17 +16,17 @@ public class Snapshot {
 	}
 
 //-------------------------------------------------------------------
-	public static void addPeer(PeerAddress address) {
+	public static void addPeer(Address address) {
 		peers.put(address, new PeerInfo());
 	}
 
 //-------------------------------------------------------------------
-	public static void removePeer(PeerAddress address) {
+	public static void removePeer(Address address) {
 		peers.remove(address);
 	}
 
 //-------------------------------------------------------------------
-	public static void updateTManPartners(PeerAddress address, ArrayList<PeerAddress> partners) {
+	public static void updateTManPartners(Address address, ArrayList<Address> partners) {
 		PeerInfo peerInfo = peers.get(address);
 		
 		if (peerInfo == null)
@@ -36,7 +36,7 @@ public class Snapshot {
 	}
 	
 //-------------------------------------------------------------------
-	public static void updateCyclonPartners(PeerAddress address, ArrayList<PeerAddress> partners) {
+	public static void updateCyclonPartners(Address address, ArrayList<Address> partners) {
 		PeerInfo peerInfo = peers.get(address);
 		
 		if (peerInfo == null)
@@ -47,7 +47,7 @@ public class Snapshot {
 
 //-------------------------------------------------------------------
 	public static void report() {
-		PeerAddress[] peersList = new PeerAddress[peers.size()];
+		Address[] peersList = new Address[peers.size()];
 		peers.keySet().toArray(peersList);
 		
 		String str = new String();
@@ -74,7 +74,7 @@ public class Snapshot {
 		PeerInfo peerInfo;
 		String str = new String("---\n");
 
-		for (PeerAddress peer : peers.keySet()) {
+		for (Address peer : peers.keySet()) {
 			peerInfo = peers.get(peer);
 		
 			str += "peer: " + peer;

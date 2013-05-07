@@ -8,8 +8,7 @@ import cyclon.simulator.core.CyclonExecutionMain;
 
 public class Main {
 	public static void main(String[] args) throws Throwable {
-		Configuration configuration = new Configuration();
-		configuration.set();
+		Configuration configuration = new Configuration(System.currentTimeMillis());
 		
 		Scenario scenario = new Scenario2();
 		scenario.setSeed(System.currentTimeMillis());

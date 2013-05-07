@@ -1,16 +1,16 @@
 package tman.system.peer.tman;
 
 import common.configuration.TManConfiguration;
-import common.peer.PeerAddress;
 import se.sics.kompics.Init;
+import se.sics.kompics.address.Address;
 
 public final class TManInit extends Init {
 
-	private final PeerAddress peerSelf;
+	private final Address peerSelf;
 	private final TManConfiguration configuration;
 
 //-------------------------------------------------------------------
-	public TManInit(PeerAddress peerSelf, TManConfiguration configuration) {
+	public TManInit(Address peerSelf, TManConfiguration configuration) {
 		super();
 		this.peerSelf = peerSelf;
 
@@ -18,7 +18,7 @@ public final class TManInit extends Init {
 	}
 
 //-------------------------------------------------------------------
-	public PeerAddress getSelf() {
+	public Address getSelf() {
 		return this.peerSelf;
 	}
 

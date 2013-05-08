@@ -117,7 +117,7 @@ public final class SearchPeer extends ComponentDefinition {
 //-------------------------------------------------------------------	
 	Handler<JoinCompleted> handleJoinCompleted = new Handler<JoinCompleted>() {
 		public void handle(JoinCompleted event) {
-			trigger(new BootstrapCompleted("Cylon", new PeerAddress(self)), 
+			trigger(new BootstrapCompleted("Cyclon", new PeerAddress(self)), 
                                 bootstrap.getPositive(P2pBootstrap.class));
 			trigger(new SearchInit(self, num, aggregationConfiguration), search.getControl());
 		}

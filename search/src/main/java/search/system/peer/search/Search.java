@@ -29,6 +29,10 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.SortField.Type;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
@@ -117,6 +121,17 @@ public final class Search extends ComponentDefinition {
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
             rst.setTimeoutEvent(new UpdateIndexTimeout(rst));
             trigger(rst, timerPort);
+            
+            // TODO super ugly workaround...
+ 			IndexWriter writer;
+ 			try {
+ 				writer = new IndexWriter(index, config);
+ 				writer.commit();
+ 				writer.close();
+ 			} catch (IOException e) {
+ 				// TODO Auto-generated catch block
+ 				e.printStackTrace();
+ 			}
 
             Snapshot.updateNum(self, num);
         }
@@ -258,27 +273,25 @@ public final class Search extends ComponentDefinition {
 
     ScoreDoc[] getExistingDocsInRange(int min, int max, IndexReader reader,
             IndexSearcher searcher) throws IOException {
-        NumericRangeQuery<Integer> entriesBetweenMissingAndMax =
-                NumericRangeQuery.newIntRange("id", 1,
-                min, max, true, true);
         reader = DirectoryReader.open(index);
         searcher = new IndexSearcher(reader);
         // The line below is dangerous - we should bound the number of entries returned
         // so that it doesn't consume too much memory.
-        int hitsPerPage = max - min;
-        TopScoreDocCollector collector = TopScoreDocCollector.create(hitsPerPage, true);
-        searcher.search(entriesBetweenMissingAndMax, collector);
-        return collector.topDocs().scoreDocs;
+        int hitsPerPage = max - min > 0 ? max - min : 1;
+        Query query = NumericRangeQuery.newIntRange("id", min, max, true, true);
+		TopDocs topDocs = searcher.search(query, hitsPerPage, new Sort(new SortField("id", Type.INT)));
+        return topDocs.scoreDocs;
     }
-
+    
     List<Range> getMissingRanges() {
         List<Range> res = new ArrayList<Range>();
-        IndexSearcher searcher = null;
         IndexReader reader = null;
+    	IndexSearcher searcher = null;
         try {
+        	reader = DirectoryReader.open(index);
+        	searcher = new IndexSearcher(reader);
             ScoreDoc[] hits = getExistingDocsInRange(lastMissingIndexEntry, maxIndexEntry,
                     reader, searcher);
-
             if (hits != null) {
                 int startRange = lastMissingIndexEntry;
                 // This should terminate by finding the last entry at position maxIndexValue
@@ -331,6 +344,8 @@ public final class Search extends ComponentDefinition {
         IndexSearcher searcher = null;
         IndexReader reader = null;
         try {
+        	reader = DirectoryReader.open(index);
+        	searcher = new IndexSearcher(reader);
             ScoreDoc[] hits = getExistingDocsInRange(range.getLower(),
                     range.getUpper(), reader, searcher);
             if (hits != null) {
@@ -383,6 +398,8 @@ public final class Search extends ComponentDefinition {
                     int docId = hits[i].doc;
                     Document d;
                     try {
+                    	reader = DirectoryReader.open(index);
+                    	searcher = new IndexSearcher(reader);
                         d = searcher.doc(docId);
                         int indexId = Integer.parseInt(d.get("id"));
                         String text = d.get("text");

@@ -450,6 +450,7 @@ public final class Search extends ComponentDefinition {
                 List<PeerDescriptor> nodes = routingTable.get(partition);
                 if (nodes == null) {
                     nodes = new ArrayList<PeerDescriptor>();
+                    routingTable.put(partition, nodes);
                 }
                 // Note - this might replace an existing entry in Lucene
                 nodes.add(new PeerDescriptor(p));

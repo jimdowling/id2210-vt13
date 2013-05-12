@@ -1,26 +1,19 @@
 package common.simulation;
 
-
+import java.io.Serializable;
 import se.sics.kompics.Event;
 
-public final class PeerJoin extends Event {
+public final class PeerJoin extends Event implements Serializable{
 
-	private final Long peerId;
-	private final int num;
-
-//-------------------------------------------------------------------	
-	public PeerJoin(Long peerId, int num) {
-		this.peerId = peerId;
-		this.num = num;
-	}
+    private final Long peerId;
 
 //-------------------------------------------------------------------	
-	public Long getPeerId() {
-		return this.peerId;
-	}
+    public PeerJoin(Long peerId) {
+        this.peerId = peerId;
+    }
 
 //-------------------------------------------------------------------	
-	public int getNum() {
-		return this.num;
-	}
+    public Long getPeerId() {
+        return this.peerId;
+    }
 }

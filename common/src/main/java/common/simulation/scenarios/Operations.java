@@ -19,16 +19,18 @@ public class Operations {
 		};
 	}
 //-------------------------------------------------------------------
-	public static Operation1<PeerJoin, Long> peerJoin(final int num) {
+	public static Operation1<PeerJoin, Long> peerJoin() {
 		return new Operation1<PeerJoin, Long>() {
+                        @Override
 			public PeerJoin generate(Long id) {
-				return new PeerJoin(id, num);
+				return new PeerJoin(id);
 			}
 		};
 	}
 
 //-------------------------------------------------------------------
 	public static Operation1<PeerFail, Long> peerFail = new Operation1<PeerFail, Long>() {
+                @Override
 		public PeerFail generate(Long id) {
 			return new PeerFail(id);
 		}
@@ -36,6 +38,7 @@ public class Operations {
 
 //-------------------------------------------------------------------
 	public static Operation<Publish> publish = new Operation<Publish>() {
+                @Override
 		public Publish generate() {
 			return new Publish();
 		}

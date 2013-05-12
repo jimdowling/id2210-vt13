@@ -14,13 +14,6 @@
     <packaging>jar</packaging>
 
     <name>id2210-tman</name>
-    <url>http://maven.apache.org</url>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kompics.version>0.4.4-SNAPSHOT</kompics.version>
-        <java.compiler.version>1.6</java.compiler.version>
-    </properties>
 
     <dependencies>
         <dependency>

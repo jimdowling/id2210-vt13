@@ -3,38 +3,30 @@ package search.simulator.snapshot;
 import java.util.ArrayList;
 import se.sics.kompics.address.Address;
 
-
 public class PeerInfo {
-	private double num;
-	private ArrayList<Address> cyclonPartners;
+
+    private int numIndexEntries;
+    private ArrayList<Address> neighbours;
 
 //-------------------------------------------------------------------
-	public PeerInfo() {
-		this.cyclonPartners = new ArrayList<Address>();
-	}
+    public PeerInfo() {
+        this.neighbours = new ArrayList<Address>();
+        this.numIndexEntries = 0;
+    }
 
-//-------------------------------------------------------------------
-	public void updateNum(double num) {
-		this.num = num;
-	}
+    public synchronized int getNumIndexEntries() {
+        return numIndexEntries;
+    }
 
-//-------------------------------------------------------------------
-	public void updateNum(int num) {
-		this.num = num;
-	}
+    public synchronized void incNumIndexEntries() {
+        this.numIndexEntries++;
+    }
 
-//-------------------------------------------------------------------
-	public void updateCyclonPartners(ArrayList<Address> partners) {
-		this.cyclonPartners = partners;
-	}
+    public synchronized void setNeighbours(ArrayList<Address> partners) {
+        this.neighbours = partners;
+    }
 
-//-------------------------------------------------------------------
-	public double getNum() {
-		return this.num;
-	}
-
-//-------------------------------------------------------------------
-	public ArrayList<Address> getCyclonPartners() {
-		return this.cyclonPartners;
-	}
+    public synchronized ArrayList<Address> getNeighbours() {
+        return new ArrayList<Address>(neighbours);
+    }
 }

@@ -1,6 +1,5 @@
 package search.system.peer.search;
 
-import search.simulator.snapshot.Snapshot;
 import common.configuration.SearchConfiguration;
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
@@ -51,6 +50,7 @@ import se.sics.kompics.timer.Timer;
 import se.sics.kompics.web.Web;
 import se.sics.kompics.web.WebRequest;
 import se.sics.kompics.web.WebResponse;
+import search.simulator.snapshot.Snapshot;
 import search.system.peer.AddIndexText;
 import search.system.peer.IndexPort;
 import tman.system.peer.tman.TManSample;
@@ -70,10 +70,8 @@ public final class Search extends ComponentDefinition {
     Negative<Web> webPort = negative(Web.class);
     Positive<CyclonSamplePort> cyclonSamplePort = positive(CyclonSamplePort.class);
     Positive<TManSamplePort> tmanPort = positive(TManSamplePort.class);
-    
     ArrayList<Address> neighbours = new ArrayList<Address>();
     private Address self;
-    private double num;
     private SearchConfiguration searchConfiguration;
     // Apache Lucene used for searching
     StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_42);
@@ -113,7 +111,6 @@ public final class Search extends ComponentDefinition {
         @Override
         public void handle(SearchInit init) {
             self = init.getSelf();
-            num = init.getNum();
             searchConfiguration = init.getConfiguration();
             routingTable = new HashMap<Integer, List<PeerDescriptor>>(searchConfiguration.getNumPartitions());
             random = new Random(init.getConfiguration().getSeed());
@@ -121,22 +118,20 @@ public final class Search extends ComponentDefinition {
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
             rst.setTimeoutEvent(new UpdateIndexTimeout(rst));
             trigger(rst, timerPort);
-            
-            // TODO super ugly workaround...
- 			IndexWriter writer;
- 			try {
- 				writer = new IndexWriter(index, config);
- 				writer.commit();
- 				writer.close();
- 			} catch (IOException e) {
- 				// TODO Auto-generated catch block
- 				e.printStackTrace();
- 			}
 
-            Snapshot.updateNum(self, num);
+            // TODO super ugly workaround...
+            IndexWriter writer;
+            try {
+                writer = new IndexWriter(index, config);
+                writer.commit();
+                writer.close();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
         }
     };
-    
     Handler<WebRequest> handleWebRequest = new Handler<WebRequest>() {
         @Override
         public void handle(WebRequest event) {
@@ -213,6 +208,7 @@ public final class Search extends ComponentDefinition {
         doc.add(new IntField("id", id, Field.Store.YES));
         w.addDocument(doc);
         w.close();
+        Snapshot.incNumIndexEntries(self);
     }
 
     private String query(StringBuilder sb, String querystr) throws ParseException, IOException {
@@ -279,17 +275,17 @@ public final class Search extends ComponentDefinition {
         // so that it doesn't consume too much memory.
         int hitsPerPage = max - min > 0 ? max - min : 1;
         Query query = NumericRangeQuery.newIntRange("id", min, max, true, true);
-		TopDocs topDocs = searcher.search(query, hitsPerPage, new Sort(new SortField("id", Type.INT)));
+        TopDocs topDocs = searcher.search(query, hitsPerPage, new Sort(new SortField("id", Type.INT)));
         return topDocs.scoreDocs;
     }
-    
+
     List<Range> getMissingRanges() {
         List<Range> res = new ArrayList<Range>();
         IndexReader reader = null;
-    	IndexSearcher searcher = null;
+        IndexSearcher searcher = null;
         try {
-        	reader = DirectoryReader.open(index);
-        	searcher = new IndexSearcher(reader);
+            reader = DirectoryReader.open(index);
+            searcher = new IndexSearcher(reader);
             ScoreDoc[] hits = getExistingDocsInRange(lastMissingIndexEntry, maxIndexEntry,
                     reader, searcher);
             if (hits != null) {
@@ -319,8 +315,8 @@ public final class Search extends ComponentDefinition {
                     }
                 }
                 // Add all entries > maxIndexEntry as a range of interest.
-                res.add(new Range(maxIndexEntry+1, Integer.MAX_VALUE));
-                
+                res.add(new Range(maxIndexEntry + 1, Integer.MAX_VALUE));
+
             }
         } catch (IOException ex) {
             java.util.logging.Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
@@ -344,8 +340,8 @@ public final class Search extends ComponentDefinition {
         IndexSearcher searcher = null;
         IndexReader reader = null;
         try {
-        	reader = DirectoryReader.open(index);
-        	searcher = new IndexSearcher(reader);
+            reader = DirectoryReader.open(index);
+            searcher = new IndexSearcher(reader);
             ScoreDoc[] hits = getExistingDocsInRange(range.getLower(),
                     range.getUpper(), reader, searcher);
             if (hits != null) {
@@ -379,7 +375,7 @@ public final class Search extends ComponentDefinition {
     }
 
     /**
-     * Called by null     {@link #handleMissingIndexEntriesRequest(MissingIndexEntries.Request) 
+     * Called by null null     {@link #handleMissingIndexEntriesRequest(MissingIndexEntries.Request) 
      * handleMissingIndexEntriesRequest}
      *
      * @return List of IndexEntries at this node great than max
@@ -398,8 +394,8 @@ public final class Search extends ComponentDefinition {
                     int docId = hits[i].doc;
                     Document d;
                     try {
-                    	reader = DirectoryReader.open(index);
-                    	searcher = new IndexSearcher(reader);
+                        reader = DirectoryReader.open(index);
+                        searcher = new IndexSearcher(reader);
                         d = searcher.doc(docId);
                         int indexId = Integer.parseInt(d.get("id"));
                         String text = d.get("text");
@@ -423,7 +419,6 @@ public final class Search extends ComponentDefinition {
         }
         return res;
     }
-
     Handler<MissingIndexEntries.Request> handleMissingIndexEntriesRequest = new Handler<MissingIndexEntries.Request>() {
         @Override
         public void handle(MissingIndexEntries.Request event) {
@@ -432,7 +427,7 @@ public final class Search extends ComponentDefinition {
             for (Range r : event.getMissingRanges()) {
                 res.addAll(getMissingIndexEntries(r));
             }
-            
+
             // TODO send missing index entries back to requester
         }
     };
@@ -442,7 +437,6 @@ public final class Search extends ComponentDefinition {
             // TODO merge the missing index entries in your lucene index 
         }
     };
-
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
         public void handle(CyclonSample event) {
@@ -485,14 +479,12 @@ public final class Search extends ComponentDefinition {
             }
         }
     };
-
     Handler<TManSample> handleTManSample = new Handler<TManSample>() {
         @Override
         public void handle(TManSample event) {
-
         }
     };
-    
+
     private void updateIndexPointers(int id) {
         if (id == lastMissingIndexEntry + 1) {
             lastMissingIndexEntry++;

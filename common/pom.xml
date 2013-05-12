@@ -1,24 +1,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-<parent>
-  <groupId>se.kth.id2210</groupId>
-  <artifactId>id2210-parent</artifactId>
-  <version>1.0-SNAPSHOT</version>
-</parent>
+    <parent>
+        <groupId>se.kth.id2210</groupId>
+        <artifactId>id2210-parent</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
     <groupId>se.kth.id2210</groupId>
     <artifactId>id2210-common</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>id2210-common</name>
-    <url>http://maven.apache.org</url>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kompics.version>0.4.4-SNAPSHOT</kompics.version>
-        <java.compiler.version>1.6</java.compiler.version>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -77,7 +70,7 @@
         </dependency>
         
         
-                <dependency>
+        <dependency>
             <groupId>se.sics.kompics.p2p.experiments</groupId>
             <artifactId>kompics-component-p2p-orchestrator</artifactId>
             <version>${kompics.version}</version>

@@ -5,30 +5,31 @@ import se.sics.kompics.p2p.experiment.dsl.SimulationScenario;
 @SuppressWarnings("serial")
 public class Scenario1 extends Scenario {
 	private static SimulationScenario scenario = new SimulationScenario() {{
-		StochasticProcess process1 = new StochasticProcess() {{
-			eventInterArrivalTime(constant(100));
-			raise(2, Operations.peerJoin(5), 
+                
+		StochasticProcess process0 = new StochasticProcess() {{
+			eventInterArrivalTime(constant(1000));
+			raise(3, Operations.peerJoin(), 
                                 uniform(0, Integer.MAX_VALUE)
                              );
 		}};
-		
-		StochasticProcess process2 = new StochasticProcess() {{
+                
+		StochasticProcess process1 = new StochasticProcess() {{
 			eventInterArrivalTime(constant(100));
-			raise(5, Operations.peerJoin(5), 
+			raise(10, Operations.peerJoin(), 
                                 uniform(0, Integer.MAX_VALUE)
                                 );
 		}};
 		
-		StochasticProcess process3 = new StochasticProcess() {{
+		StochasticProcess process2 = new StochasticProcess() {{
 			eventInterArrivalTime(constant(100));
 			raise(100, Operations.addIndexEntry(), 
                                 uniform(0, Integer.MAX_VALUE)
                                 );
 		}};
 
-		process1.start();
+		process0.start();
+		process1.startAfterTerminationOf(2000, process0);
 		process2.startAfterTerminationOf(2000, process1);
-		process3.startAfterTerminationOf(2000, process2);
 	}};
 
 	// -------------------------------------------------------------------

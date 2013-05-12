@@ -78,7 +78,6 @@ public final class CyclonSimulator extends ComponentDefinition {
 //-------------------------------------------------------------------	
     Handler<PeerJoin> handlePeerJoin = new Handler<PeerJoin>() {
         public void handle(PeerJoin event) {
-            int num = event.getNum();
             Long id = event.getPeerId();
 
             // join with the next id if this id is taken
@@ -89,7 +88,7 @@ public final class CyclonSimulator extends ComponentDefinition {
                 successor = cyclonView.getNode(id);
             }
 
-            Component newPeer = createAndStartNewPeer(id, num);
+            Component newPeer = createAndStartNewPeer(id);
             cyclonView.addNode(id);
 
             trigger(new JoinPeer(id), newPeer.getPositive(PeerPort.class));
@@ -117,7 +116,7 @@ public final class CyclonSimulator extends ComponentDefinition {
     };
 
 //-------------------------------------------------------------------	
-    private final Component createAndStartNewPeer(long id, int num) {
+    private final Component createAndStartNewPeer(long id) {
         Component peer = create(Peer.class);
         InetAddress ip = ipGenerator.generateIP();
         Address address = new Address(ip, 5821, (int) id);
@@ -125,7 +124,7 @@ public final class CyclonSimulator extends ComponentDefinition {
         connect(network, peer.getNegative(Network.class), new MessageDestinationFilter(address));
         connect(timer, peer.getNegative(Timer.class));
 
-        trigger(new PeerInit(address, num, bootstrapConfiguration, cyclonConfiguration), 
+        trigger(new PeerInit(address, bootstrapConfiguration, cyclonConfiguration), 
                 peer.getControl());
 
         trigger(new Start(), peer.getControl());

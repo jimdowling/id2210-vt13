@@ -1,9 +1,10 @@
 package common.simulation;
 
 
+import java.io.Serializable;
 import se.sics.kompics.Event;
 
-public final class AddIndexEntry extends Event {
+public final class AddIndexEntry extends Event implements Serializable {
 
     private final Long id;
 

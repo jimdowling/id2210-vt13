@@ -92,21 +92,37 @@ public final class SearchPeer extends ComponentDefinition {
 		}
 	};
 
-
-//-------------------------------------------------------------------	
+//-------------------------------------------------------------------
+	private static LinkedList<Address> bootstrappingBugWorkaroundCache;
+	
 	Handler<BootstrapResponse> handleBootstrapResponse = new Handler<BootstrapResponse>() {
-                @Override
+        @Override
 		public void handle(BootstrapResponse event) {
 			if (!bootstrapped) {
 				Set<PeerEntry> somePeers = event.getPeers();
 				LinkedList<Address> cyclonInsiders = new LinkedList<Address>();
 				
+				// This should not happen but it does
+				if (somePeers == null) {
+					return;
+				}
+				
 				for (PeerEntry peerEntry : somePeers) {
-					cyclonInsiders.add(
-                                                peerEntry.getOverlayAddress().getPeerAddress());
-                                }
-				trigger(new CyclonJoin(self, cyclonInsiders), 
-                                        cyclon.getPositive(CyclonPort.class));
+					cyclonInsiders.add(peerEntry.getOverlayAddress().getPeerAddress());
+                }
+				
+				/*
+				 * This is unfortunately necessary because the bootstrapping
+				 * server seems to forget the nodes over time and return an
+				 * empty list if queried again later. This leads to partitions.
+				 */
+				if (somePeers.isEmpty() && bootstrappingBugWorkaroundCache != null) {
+					cyclonInsiders = bootstrappingBugWorkaroundCache;
+				} else {
+					bootstrappingBugWorkaroundCache = cyclonInsiders;
+				}
+				
+				trigger(new CyclonJoin(self, cyclonInsiders), cyclon.getPositive(CyclonPort.class));
 				bootstrapped = true;
 			}
 		}

@@ -2,7 +2,7 @@ package tman.system.peer.tman;
 
 import java.util.UUID;
 
-import cyclon.system.peer.cyclon.DescriptorBuffer;
+import java.util.List;
 import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Message;
 import se.sics.kompics.timer.ScheduleTimeout;
@@ -14,14 +14,14 @@ public class ExchangeMsg {
 
         private static final long serialVersionUID = 8493601671018888143L;
         private final UUID requestId;
-        private final DescriptorBuffer randomBuffer;
+        private final List<Address> selectedBuffer;
 
 //-------------------------------------------------------------------
-        public Request(UUID requestId, DescriptorBuffer randomBuffer, Address source, 
+        public Request(UUID requestId, List<Address> randomBuffer, Address source, 
                 Address destination) {
             super(source, destination);
             this.requestId = requestId;
-            this.randomBuffer = randomBuffer;
+            this.selectedBuffer = randomBuffer;
         }
 
 //-------------------------------------------------------------------
@@ -30,8 +30,8 @@ public class ExchangeMsg {
         }
 
         //-------------------------------------------------------------------
-        public DescriptorBuffer getRandomBuffer() {
-            return randomBuffer;
+        public List<Address> getRandomBuffer() {
+            return selectedBuffer;
         }
 
 //-------------------------------------------------------------------
@@ -44,10 +44,10 @@ public class ExchangeMsg {
 
         private static final long serialVersionUID = -5022051054665787770L;
         private final UUID requestId;
-        private final DescriptorBuffer selectedBuffer;
+        private final List<Address> selectedBuffer;
 
 //-------------------------------------------------------------------
-        public Response(UUID requestId, DescriptorBuffer selectedBuffer, Address source, Address destination) {
+        public Response(UUID requestId, List<Address> selectedBuffer, Address source, Address destination) {
             super(source, destination);
             this.requestId = requestId;
             this.selectedBuffer = selectedBuffer;
@@ -59,7 +59,7 @@ public class ExchangeMsg {
         }
 
 //-------------------------------------------------------------------
-        public DescriptorBuffer getSelectedBuffer() {
+        public List<Address> getSelectedBuffer() {
             return selectedBuffer;
         }
 

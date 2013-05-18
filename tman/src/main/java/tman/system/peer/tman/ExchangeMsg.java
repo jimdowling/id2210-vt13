@@ -30,7 +30,7 @@ public class ExchangeMsg {
         }
 
         //-------------------------------------------------------------------
-        public List<Address> getRandomBuffer() {
+        public List<Address> getSelectedBuffer() {
             return selectedBuffer;
         }
 
